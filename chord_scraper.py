@@ -1,12 +1,12 @@
 import re
 import os
 from note_name_to_number import noteMidiDB
-from chords import stored_chords
+from stored_chords import stored_chords
 
 chords = []
 chords_meta_data = {}
 deviation = 20 #allows notes either-side of the chord location to be included in the chord (notes next to each other in a chord are usually ofset on the x-axis)
-directory = os.fsencode(".") #directory of musicXML files
+directory = "./fully_arranged_standards_musicxml" #directory of musicXML files
 
 
 def alter_note(note, step):
@@ -152,9 +152,9 @@ def mine_chords_from_dir(directory):
     for file in os.listdir(directory):
         filename = os.fsdecode(file)
         if filename.endswith(".musicxml"):
-            print(filename)
+            print(os.path.join(directory, filename))
             # count_degree_tags(filename) # checks if degree tags are even, essential for extensions to be gathered correctly
-            get_chords_meta(filename)
+            get_chords_meta(os.path.join(directory, filename))
 
 def flatten_chords():
     global chords 
@@ -186,7 +186,7 @@ def main():
     sort_notes()
     print(chords)
 
-# main()
+main()
 
-gather_chord_type_meta_data()
+# gather_chord_type_meta_data()
 
