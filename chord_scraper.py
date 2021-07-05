@@ -1,10 +1,13 @@
 import re
 import os
-from note_name_to_number import noteMidiDB
+from note_name_to_number import noteMidiDB, transpose_to_c, extensions_to_integer_notation, chord_label_to_integer_notation
 from stored_chords import stored_chords
+import copy
 
-chords = []
+chords = stored_chords
+chords_in_c = []
 chords_meta_data = {}
+index_of_inverted_chords = []
 deviation = 20 #allows notes either-side of the chord location to be included in the chord (notes next to each other in a chord are usually ofset on the x-axis)
 directory = "./fully_arranged_standards_musicxml" #directory of musicXML files
 
@@ -16,10 +19,15 @@ def alter_note(note, step):
         return note + "b"
     return note
 
+# sort function for ordering note names
+def sort_note_names(note):
+    return noteMidiDB[note]
+
 def sort_notes():
     global chords
     for chord in chords:
         chord['note_numbers'].sort()
+        chord['notes'].sort(key=sort_note_names)
 
 def note_deviation_limits(deviation, location):
     location_int = float(location)
@@ -171,22 +179,176 @@ def gather_chord_type_meta_data():
 def print_num_chords():
     print(len(chords))
 
-def chords_pretty_print():
+def chords_pretty_print(chords_in):
     j=0
-    for chord in chords:
+    for chord in chords_in:
         print(j, chord)
         j = j + 1
 
+def count_num_inverted_chords():
+    global chords
+    global index_of_inverted_chords
+    index_of_inverted_chords = []
+    count = 0
+    index = 0
+    for chord in chords:
+        root_note = chord['root_note']
+        bottom_note = chord['notes'][0]
+        if len(bottom_note) == 3:
+            bottom_note = chord['notes'][0][0:2]
+        else: bottom_note = chord['notes'][0][0]
+        if transpose_to_c[root_note] != transpose_to_c[bottom_note]: #some root notes are "F#" with a bottom note of "Gb". This method ensures that these are evaluated as equal
+            count = count + 1
+            index_of_inverted_chords.append(index)
+        index = index + 1
+    print ("number of inverted chords: ", count)
+    return count
+
+def transpose_chords_to_key_c():
+    global chords
+    global chords_in_c
+    c2_num = noteMidiDB['C2']
+    c3_num = noteMidiDB['C3']
+    chords_in_c = copy.deepcopy(chords)
+    for chord in chords_in_c:
+        del chord['notes_x_location']
+        del chord['notes_y_location']
+        del chord['measure']
+        del chord['song']
+        del chord['fifths']
+        del chord['notes'] #remove all keys apart from type, extensions, and note_numbers
+        lowest_note = chord['note_numbers'][0]
+        root = chord['root_note']
+        if lowest_note >= c3_num:
+            gap = transpose_to_c[root]["down"]
+        elif lowest_note > 20 or lowest_note < c2_num: # if root note in chord is F2 or above, transpose the chord so the root is C3
+            gap = transpose_to_c[root]["up"]
+        else:
+            gap = transpose_to_c[root]["down"]
+        for idx, note in enumerate(chord['note_numbers']):
+            chord['note_numbers'][idx] = chord['note_numbers'][idx] + gap
+
+        del chord['root_note']
+            
+
+# the number of chords with C NOT as bottom note should be = total num inverted chords
+def test_transpose_to_c():
+    index_of_inverted_transposed_chords = []
+    num_of_inverted_chords = count_num_inverted_chords()
+    count = 0
+    bottom_note_counts = {}
+    index = 0
+    for chord in chords_in_c:
+        if chord['note_numbers'][0] not in [4, 16, 28, 40, 52, 64, 76]:
+            count = count + 1
+            index_of_inverted_transposed_chords.append(index)
+        if chord['note_numbers'][0] in bottom_note_counts:
+            bottom_note_counts[chord['note_numbers'][0]] = bottom_note_counts[chord['note_numbers'][0]] + 1
+        else:
+            bottom_note_counts[chord['note_numbers'][0]] = 1
+        index = index + 1
+    if count != num_of_inverted_chords:
+        print ("error - transpose function not working: expected num of inverted chords: ", num_of_inverted_chords, ". actual ", count)
+        print ("chords with errors:")
+        find_incorrectly_transposed_chords(index_of_inverted_transposed_chords)
+        return False
+    else:
+        print ("success - transpose working correctly")
+        return True
+
+def find_incorrectly_transposed_chords(index_of_inverted_transposed_chords):
+    for chord in index_of_inverted_chords:
+        if chord not in index_of_inverted_transposed_chords:
+            print(chords[chord])
+
+
+def transpose_extreme_octaves():
+    global chords_in_c
+    for chord in chords_in_c:
+        if chord['note_numbers'][0] < 16:
+            for idx, note in enumerate(chord['note_numbers']):
+                chord['note_numbers'][idx] = chord['note_numbers'][idx] + 12
+        if chord['note_numbers'][0] > 40:
+            for idx, note in enumerate(chord['note_numbers']):
+                chord['note_numbers'][idx] = chord['note_numbers'][idx] - 12
+    while test_transpose_extreme_octaves(False) == False: # recursively runs function until all chord roots are within desirable range (16-40)
+        transpose_extreme_octaves()
+    
+
+def test_transpose_extreme_octaves(is_user_test=True):
+    global chords_in_c
+    for chord in chords_in_c:
+        if chord['note_numbers'][0] < 16 or chord['note_numbers'][0] > 40:
+            if is_user_test: print("Error - some chords still in extreme octaves")
+            return False
+    if is_user_test: print("Success - all chords in desirable range")
+    return True
+    
+def create_chord_label_vectors():
+    index = 0
+    invalid_chord_types_index = []
+    for chord in chords_in_c:
+        label = []
+        if len(chord['extensions']) > 0: #convert any extensions to integer notation and add to label array
+            for extension in chord['extensions']:
+                error = False
+                modifier = 0
+                if "b" in extension[-1] or "#" in extension[-1]:
+                    accidental = extension[-1]
+                else: accidental = False
+                string_ofset = 1 if accidental else 0
+                scale_degree = extension[0: (len(extension) - string_ofset)]
+                integer_notation  = 0
+                try:
+                    integer_notation = extensions_to_integer_notation[scale_degree]
+                except:
+                    print("Error - unrecognised extension integer:", scale_degree, ". Need to add extension to extensions_to_integer_notation inside note_name_to_number.py")
+                    error = True
+                if (accidental):
+                    modifier = 1 if accidental == "#" else -1
+                if error == False:
+                    label.append(integer_notation + modifier)
+        # del chord['extensions']
+        try:
+            label = label + chord_label_to_integer_notation[chord['type']] #convert chord label to set of associated notes as integer notations
+        except:
+            print("Error - unrecognised chord label. Need to add chord label to chord_label_to_integer_notation inside note_name_to_number.py")
+            invalid_chord_types_index.append(index)
+        label.sort()
+        chord['label'] = label
+        del chord ['type']
+        index = index + 1
+    invalid_chord_types_index.sort(reverse=True) # reverse the order of the invalid chords indices as need to remove from list in reverse order
+    print("total invalid chord types: ", len(invalid_chord_types_index))
+    print("deleting now:")
+    for index in invalid_chord_types_index:
+        print("deleting chord at index", index, ". Type was invalid:")
+        del chords_in_c[index]
+    
 
 def main():
-    mine_chords_from_dir(directory)
-    flatten_chords()
-    remove_invalid_chords()
-    add_note_numbers()
-    sort_notes()
-    print(chords)
+    # mine_chords_from_dir(directory)
+    # flatten_chords()
+    # remove_invalid_chords()
+    # add_note_numbers()
+    # sort_notes()
+
+    # chords_pretty_print(chords)
+
+    count_num_inverted_chords()
+    transpose_chords_to_key_c()
+    test_transpose_to_c()
+    transpose_extreme_octaves()
+    test_transpose_extreme_octaves()
+
+    chords_pretty_print(chords_in_c)
+    create_chord_label_vectors()
+    chords_pretty_print(chords_in_c)
+
 
 main()
 
+
 # gather_chord_type_meta_data()
+
 

@@ -153,4 +153,130 @@ noteMidiDB = {
     "Bb0": 2,
     "A#0": 2,
     "A0": 1,
-};
+}
+
+
+transpose_to_c = {
+    "B#": {
+        "up": 0,
+        "down":0
+    },
+    "Cb": {
+        "up": 1,
+        "down": -11
+    },
+    "B": {
+        "up": 1,
+        "down": -11
+    },
+    "Bb": {
+        "up": 2,
+        "down": -10
+    },
+    "A#": {
+        "up": 2,
+        "down": -10
+    },
+    "A": {
+        "up": 3,
+        "down": -9
+    },
+    "Ab": {
+        "up": 4,
+        "down": -8
+    },
+    "G#": {
+        "up": 4,
+        "down": -8
+    },
+    "G": {
+        "up": 5,
+        "down": -7 
+    },
+    "Gb": {
+        "up": 6,
+        "down": -6
+    },
+    "F#": {
+        "up": 6,
+        "down": -6
+    },
+    "F": {
+        "up": 7,
+        "down": -5
+    },
+    "E#": {
+        "up": 7,
+        "down": -5
+    },
+    "Fb": {
+        "up": 8,
+        "down": -4
+    },
+    "E": {
+        "up": 8,
+        "down": -4
+    },
+    "Eb": {
+        "up": 9,
+        "down": -3
+    },
+    "D#": {
+        "up": 9,
+        "down": -3
+    },
+    "D": {
+        "up": 10,
+        "down": -2
+    },
+    "Db": {
+        "up": 11,
+        "down": -1
+    },
+    "C#": {
+        "up": 11,
+        "down": -1,
+    },
+    "C": {
+        "up": 0,
+        "down": 0,
+    }
+}
+
+# https://en.wikipedia.org/wiki/Pitch_class#Integer_notation
+chord_label_to_integer_notation = {
+    'dominant': [0, 4, 7, 10], 
+    'minor-seventh': [0, 3, 7, 10], 
+    'minor-ninth': [0, 2, 3, 7, 10], 
+    'minor-11th': [0, 2, 3, 5, 7, 10], 
+    'minor-13th': [0, 2, 3, 7, 9, 10], 
+    'dominant-11th': [0, 2, 4, 5, 7, 10], 
+    'major-sixth': [0, 4, 7, 9], 
+    'suspended-fourth': [0, 5, 7], 
+    'major-ninth': [0, 2, 4, 7, 11], 
+    'major-seventh': [0, 4, 7, 11], 
+    'dominant-13th': [0, 2, 4, 7, 9, 10], 
+    'dominant-ninth': [0, 2, 4, 7, 10], 
+    'major': [0, 4, 7], 
+    'major-minor': [0, 3, 7, 11], 
+    'diminished': [0, 3, 6], 
+    'half-diminished': [0, 3, 6, 10], 
+    'augmented-seventh': [0, 4, 8, 10], 
+    'minor': [0, 3, 7], 
+    'diminished-seventh': [0, 3, 6, 9], 
+    'minor-sixth': [0, 3, 7, 9], 
+    'major-13th': [0, 2, 4, 7, 9, 11], 
+    'augmented': [0, 4, 8], 
+    'suspended-second': [0, 2, 7]
+}
+
+extensions_to_integer_notation = {
+    "13": 9,
+    "11": 5,
+    "9": 2, 
+    "7": 10, # 7 usually refers to dominant 7 (b7)
+    "6": 9,
+    "5": 7,
+    "4": 5,
+    "2": 2
+}
