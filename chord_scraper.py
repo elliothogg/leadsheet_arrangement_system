@@ -308,7 +308,7 @@ def create_chord_label_vectors():
                     modifier = 1 if accidental == "#" else -1
                 if error == False:
                     label.append(integer_notation + modifier)
-        # del chord['extensions']
+        del chord['extensions']
         try:
             label = label + chord_label_to_integer_notation[chord['type']] #convert chord label to set of associated notes as integer notations
         except:
