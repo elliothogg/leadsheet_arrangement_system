@@ -3,9 +3,12 @@ import os
 from note_name_to_number import noteMidiDB, transpose_to_c, extensions_to_integer_notation, chord_label_to_integer_notation
 from stored_chords import stored_chords
 import copy
+import numpy as np
+import pickle
 
 chords = stored_chords
 chords_in_c = []
+training_data = ()
 chords_meta_data = {}
 index_of_inverted_chords = []
 deviation = 20 #allows notes either-side of the chord location to be included in the chord (notes next to each other in a chord are usually ofset on the x-axis)
@@ -273,7 +276,21 @@ def transpose_extreme_octaves():
                 chord['note_numbers'][idx] = chord['note_numbers'][idx] - 12
     while test_transpose_extreme_octaves(False) == False: # recursively runs function until all chord roots are within desirable range (16-40)
         transpose_extreme_octaves()
+    index = 0
+    out_of_range_chords = []
+    for chord in chords_in_c:
+        note = chord['note_numbers']
+        if note[len(note)-1] > 88:
+            out_of_range_chords.append(index)
+        index = index + 1
+    print(len(out_of_range_chords), "chords have outlying voicings. Removing from array:")
+    out_of_range_chords.sort(reverse=True) # reverse the order of the invalid chords indices as need to remove from list in reverse order
+    for index in out_of_range_chords:
+        del chords_in_c[index]
+        print("chord at index ", index, "deleted")
+    print(len(chords_in_c))
     
+
 
 def test_transpose_extreme_octaves(is_user_test=True):
     global chords_in_c
@@ -312,7 +329,7 @@ def create_chord_label_vectors():
         try:
             label = label + chord_label_to_integer_notation[chord['type']] #convert chord label to set of associated notes as integer notations
         except:
-            print("Error - unrecognised chord label. Need to add chord label to chord_label_to_integer_notation inside note_name_to_number.py")
+            print("Error - unrecognised chord label -", chord['type'], ". Need to add chord label to chord_label_to_integer_notation inside note_name_to_number.py")
             invalid_chord_types_index.append(index)
         label.sort()
         chord['label'] = label
@@ -325,6 +342,45 @@ def create_chord_label_vectors():
         print("deleting chord at index", index, ". Type was invalid:")
         del chords_in_c[index]
     
+
+def convert_notes_to_88_key_vectors():
+    global chords_in_c
+    for chord in chords_in_c:
+        notes = np.zeros(88, dtype='int8')
+        for note in chord['note_numbers']:
+            notes[note - 1] = 1
+        chord['notes'] = notes
+        del chord['note_numbers']        
+
+# a vector of 12 numbers representing which notes are in the chord
+def convert_labels_to_numpy_arrays():
+    global chords_in_c
+    for chord in chords_in_c:
+        label = np.zeros(12, dtype='int8')
+        for step in chord['label']:
+            label[step] = 1
+        chord['label'] = label
+
+
+def create_training_data():
+    global training_data
+    number_of_items = len(chords_in_c)
+    trainX = np.empty([number_of_items, 88]) #notes
+    trainy = np.empty([number_of_items, 12]) #labels
+
+    index = 0
+
+    for chord in chords_in_c:
+        trainX[index] = chord['notes']
+        trainy[index] = chord['label']
+        index = index + 1
+    training_data = (trainX, trainy)
+
+
+def write_training_data():
+    training_data_pickle = pickle.dumps(training_data)
+    with open('training_data.pickle', 'wb') as file:
+        pickle.dump(training_data, file)
 
 def main():
     # mine_chords_from_dir(directory)
@@ -341,10 +397,17 @@ def main():
     transpose_extreme_octaves()
     test_transpose_extreme_octaves()
 
-    chords_pretty_print(chords_in_c)
+    
     create_chord_label_vectors()
-    chords_pretty_print(chords_in_c)
 
+    convert_notes_to_88_key_vectors()
+    convert_labels_to_numpy_arrays()
+
+    # chords_pretty_print(chords_in_c)
+
+    create_training_data()
+
+    write_training_data()
 
 main()
 
