@@ -67,7 +67,7 @@ def get_chords_meta(file_name):
     with open(file_name) as topo_file:
         for line in topo_file:
             line_number += 1
-            if "<measure number" in line:
+            if "<measure number" in line: # try an xml parser https://docs.python.org/3/library/xml.etree.elementtree.html
                 measure = re.search(r"(?<=number=\")(.*?)(?=\")", line).group(1)
             if "<fifths" in line:
                 fifths = re.search(r"(?<=>)(.*?)(?=<\/fifths>)", line).group(1)
@@ -389,7 +389,7 @@ def main():
     # add_note_numbers()
     # sort_notes()
 
-    # chords_pretty_print(chords)
+    chords_pretty_print(chords)
 
     count_num_inverted_chords()
     transpose_chords_to_key_c()
@@ -401,17 +401,16 @@ def main():
     create_chord_label_vectors()
 
     convert_notes_to_88_key_vectors()
-    convert_labels_to_numpy_arrays()
+    convert_labels_to_numpy_arrays() #use binary number instead
 
-    # chords_pretty_print(chords_in_c)
 
     create_training_data()
+    chords_pretty_print(chords_in_c)
 
     write_training_data()
 
 main()
 
-
-# gather_chord_type_meta_data()
+gather_chord_type_meta_data()
 
 
