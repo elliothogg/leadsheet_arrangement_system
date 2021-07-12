@@ -10,14 +10,22 @@ new_model = tf.keras.models.load_model('saved_model/my_model')
 
 new_model.summary()
 
-probability_model = tf.keras.Sequential([new_model, tf.keras.layers.ReLU()])
+probability_model = tf.keras.Sequential([new_model, tf.keras.layers.ReLU(max_value=1)])
 
-print(x[0])
+def convert_note_vector_to_note_numbers(note_vector):
+    i = 0
+    note_numbers = []
+    for note in note_vector:
+        if note == 1:
+            note_numbers.append(i + 1)
+        i = i + 1
+    return note_numbers
 
-test = x[0]
 
 prediction = probability_model.predict(x)
 
-print(prediction[4720])
+print(convert_note_vector_to_note_numbers(x[4722]))
 
-print(y[4720])
+print(prediction[4722])
+
+print(y[4722])

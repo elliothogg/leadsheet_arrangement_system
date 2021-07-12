@@ -9,6 +9,7 @@ import pickle
 chords = stored_chords
 chords_in_c = []
 training_data = ()
+training_data_2d = ()
 chords_meta_data = {}
 index_of_inverted_chords = []
 deviation = 20 #allows notes either-side of the chord location to be included in the chord (notes next to each other in a chord are usually ofset on the x-axis)
@@ -333,7 +334,7 @@ def create_chord_label_vectors():
             invalid_chord_types_index.append(index)
         label.sort()
         chord['label'] = label
-        del chord ['type']
+        # del chord ['type']
         index = index + 1
     invalid_chord_types_index.sort(reverse=True) # reverse the order of the invalid chords indices as need to remove from list in reverse order
     print("total invalid chord types: ", len(invalid_chord_types_index))
@@ -362,6 +363,7 @@ def convert_labels_to_numpy_arrays():
         chord['label'] = label
 
 
+# this creates two arrays: trainX - (num of items, 88) . Train y - (num of items, 12)
 def create_training_data():
     global training_data
     number_of_items = len(chords_in_c)
@@ -377,10 +379,41 @@ def create_training_data():
     training_data = (trainX, trainy)
 
 
+# this creates a 2d representation of the training data: trainX_2d - (num of items, 7, 12) the bottom 3 notes and top note of the piano are disregardedm giving 7 full octaves
+#                                                        trainy_2d - (num of items, 7, 12) the original 12 note vector is transformed into the same shape as trainy, with that vector sitting in the middle C octave
+# cGan training generally requires the source and expected data to be of the same shape
+def create_2d_training_data():
+    global training_data_2d
+    number_of_items = len(chords_in_c)
+    trainX_2d = np.empty([number_of_items, 7, 12]) #notes
+    trainy_2d = np.zeros([number_of_items, 7, 12]) #labels
+    index = 0
+    for chord in chords_in_c:
+
+        # convert 88 note vector into 7 x 12 note vector
+        notes = chord['notes'][3:87] # ommiting bottom 3 notes and top note, leaving 7 full octaves
+        i = 0
+        for j in range(0, notes.shape[0], 12): # loop through each set of 12 notes
+            trainX_2d[index][i] = notes[j: j+12] # assign each set of 12 notes to an array in trainX_2d
+            i = i + 1
+        
+        # convert 1d 12 label vector into 7 x 12 vector
+        label = chord['label']
+        trainy_2d[index][3] = label
+
+        index = index + 1
+    training_data_2d = (trainX_2d, trainy_2d)
+
 def write_training_data():
     training_data_pickle = pickle.dumps(training_data)
+    training_data_2d_pickle = pickle.dumps(training_data_2d)
     with open('training_data.pickle', 'wb') as file:
         pickle.dump(training_data, file)
+    with open('training_data_2d.pickle', 'wb') as file:
+        pickle.dump(training_data_2d, file)
+
+
+
 
 def main():
     # mine_chords_from_dir(directory)
@@ -389,7 +422,7 @@ def main():
     # add_note_numbers()
     # sort_notes()
 
-    chords_pretty_print(chords)
+    # chords_pretty_print(chords)
 
     count_num_inverted_chords()
     transpose_chords_to_key_c()
@@ -404,10 +437,13 @@ def main():
     convert_labels_to_numpy_arrays() #use binary number instead
 
 
+    # chords_pretty_print(chords_in_c)
+
     create_training_data()
-    chords_pretty_print(chords_in_c)
+    create_2d_training_data()
 
     write_training_data()
+
 
 main()
 
