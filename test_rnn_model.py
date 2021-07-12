@@ -6,12 +6,12 @@ with open('training_data.pickle', 'rb') as file:
 
 x, y = training_data
 
-new_model = tf.keras.models.load_model('saved_model/my_model')
+rnn_model = tf.keras.models.load_model('rnn_network')
+rnn_model.summary()
 
-new_model.summary()
+probability_model = tf.keras.Sequential([rnn_model, tf.keras.layers.ReLU(max_value=1)])
 
-probability_model = tf.keras.Sequential([new_model, tf.keras.layers.ReLU(max_value=1)])
-
+# utility function that converts 88 note vector to note numbers. Makes it easier for analysis of chords
 def convert_note_vector_to_note_numbers(note_vector):
     i = 0
     note_numbers = []

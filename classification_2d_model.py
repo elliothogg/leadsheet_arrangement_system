@@ -46,8 +46,8 @@ n_inputs, n_outputs = x_2d.shape[1], y_2d.shape[1]
 
 print(n_inputs, n_outputs)
 
-
-model = tf.keras.Sequential([
+# common pattern: a stack of Conv1d and maxpooling1d layers
+model_2 = tf.keras.Sequential([
 tf.keras.layers.Conv1D(7, 2, activation='relu', input_shape=(7, 12)),
 tf.keras.layers.MaxPooling1D(1),
 tf.keras.layers.Conv1D(14, 2, activation='relu'),
@@ -58,8 +58,19 @@ tf.keras.layers.Dense(64, activation='relu'),
 tf.keras.layers.Dense(12)
 ])
 
+# here we use 64 parallel feature maps and kernal size of 3.
+model = tf.keras.Sequential([
+tf.keras.layers.Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(7, 12)),
+tf.keras.layers.Conv1D(filters=64, kernel_size=3, activation='relu'),
+tf.keras.layers.Dropout(0.5), # randomly sets values to 0, prevents overfitting
+tf.keras.layers.MaxPooling1D(pool_size=2),
+tf.keras.layers.Flatten(),
+tf.keras.layers.Dense(64, activation='relu'),
+tf.keras.layers.Dense(12)
+])
 
 
+# we have to use BinaryCrossentropy as values are binary (get more info on this) cross entropy loss function as multi-class classification problem
 model.compile(optimizer='adam', loss=tf.keras.losses.BinaryCrossentropy(from_logits=True), metrics=['accuracy'])
 
 model.fit(x_train_2d, y_train_1d, epochs=200)

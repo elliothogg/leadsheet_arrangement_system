@@ -38,7 +38,7 @@ model.compile(optimizer='adam', loss=tf.keras.losses.BinaryCrossentropy(from_log
 
 model.fit(x_train, y_train, epochs=200)
 
-model.save('saved_model/my_model')
+model.save('rnn_network')
 
 test_loss, test_acc = model.evaluate(x_test,  y_test, verbose=2)
 
