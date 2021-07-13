@@ -9,6 +9,7 @@ import pickle
 chords = stored_chords
 chords_in_c = []
 training_data = ()
+training_data_1d = ()
 training_data_2d = ()
 chords_meta_data = {}
 index_of_inverted_chords = []
@@ -404,11 +405,34 @@ def create_2d_training_data():
         index = index + 1
     training_data_2d = (trainX_2d, trainy_2d)
 
+# this creates a 1D representation of the labels and chord notes in the shape of (88,). The 12 note label vectors are embedded into an 88 note vector, sitting in the middle C octave
+def create_1d_training_data():
+    global training_data_1d
+    number_of_items = len(chords_in_c)
+    trainX = np.empty([number_of_items, 88]) #notes
+    trainy = np.empty([number_of_items, 88]) #labels
+
+    index = 0
+
+    for chord in chords_in_c:
+        trainX[index] = chord['notes'] # assign 88 chord notes array to trainX data
+
+        label_88 = np.zeros(76, dtype='int8') # length 76 to account for 12 note label vector to be added
+        C4 = noteMidiDB['C4'] - 1 # needs to be 0 indexed
+        label_88 = np.insert(label_88, C4, chord['label']) # inserts the 12 note label vector at the position of C4
+        print(label_88)
+        trainy[index] = label_88
+        index = index + 1
+    training_data_1d = (trainX, trainy)
+
+
 def write_training_data():
     training_data_pickle = pickle.dumps(training_data)
     training_data_2d_pickle = pickle.dumps(training_data_2d)
     with open('training_data.pickle', 'wb') as file:
         pickle.dump(training_data, file)
+    with open('training_data_1d.pickle', 'wb') as file:
+        pickle.dump(training_data_1d, file)
     with open('training_data_2d.pickle', 'wb') as file:
         pickle.dump(training_data_2d, file)
 
@@ -440,9 +464,13 @@ def main():
     # chords_pretty_print(chords_in_c)
 
     create_training_data()
+    create_1d_training_data()
     create_2d_training_data()
 
     write_training_data()
+
+    print(training_data[1][0])
+    print(training_data_1d[1][0])
 
 
 main()
