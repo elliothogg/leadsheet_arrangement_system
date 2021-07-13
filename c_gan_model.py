@@ -211,7 +211,7 @@ def summarize_performance(step, g_model, dataset, n_samples=3):
     print('>Saved: %s and %s' % (filename1, filename2))
  
 # train pix2pix models
-def train(d_model, g_model, gan_model, dataset, n_epochs=100, n_batch=1):
+def train(d_model, g_model, gan_model, dataset, n_epochs=1, n_batch=1):
     # determine the output square shape of the discriminator
     n_patch = d_model.output_shape[1]
     # unpack dataset
@@ -235,8 +235,8 @@ def train(d_model, g_model, gan_model, dataset, n_epochs=100, n_batch=1):
         # summarize performance
         print('>%d, d1[%.3f] d2[%.3f] g[%.3f]' % (i+1, d_loss1, d_loss2, g_loss))
         # summarize model performance
-        if (i+1) % (bat_per_epo * 10) == 0:
-            summarize_performance(i, g_model, dataset)
+        
+    summarize_performance(i, g_model, dataset)
  
 # load image data
 dataset = load_real_samples()
@@ -248,8 +248,8 @@ print(image_shape)
 d_model = define_discriminator(image_shape)
 g_model = define_generator(image_shape)
 
-g_model.summary()
+d_model.summary()
 # define the composite model
 gan_model = define_gan(g_model, d_model, image_shape)
 # train model
-train(d_model, g_model, gan_model, dataset)
+# train(d_model, g_model, gan_model, dataset)
