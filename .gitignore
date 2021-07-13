@@ -4,3 +4,4 @@ __pycache__
 Reharms/
 venv/
 .vscode
+Mnist_fashion_gan_test/
