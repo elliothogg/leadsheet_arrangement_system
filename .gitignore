@@ -5,3 +5,6 @@ Reharms/
 venv/
 .vscode
 Mnist_fashion_gan_test/
+maps_256.npz
+maps/
+examine_maps_data.py
