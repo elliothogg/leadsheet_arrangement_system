@@ -168,7 +168,6 @@ def generate_real_samples(dataset, n_samples, patch_shape):
     X1, X2 = trainA[ix], trainB[ix]
     # generate 'real' class labels (1)
     y = ones((n_samples, patch_shape, 1))
-    print(y.shape)
     return [X1, X2], y
 
 def generate_fake_samples(g_model, samples, patch_shape):
@@ -176,7 +175,6 @@ def generate_fake_samples(g_model, samples, patch_shape):
     X = g_model.predict(samples)
     # create 'fake' class labels (0)
     y = zeros((len(X), patch_shape, 1))
-    print(y.shape)
     return X, y
 
 def summarize_performance(step, g_model, dataset, n_samples=3):
