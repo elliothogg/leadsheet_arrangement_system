@@ -213,7 +213,7 @@ def train(d_model, g_model, gan_model, dataset, n_epochs=13, n_batch=1,vfreq=500
             #     plotTestData(g_model, plot_data, resultdir,plots=True)
 
             # save the generator model
-            g_model.save(resultdir + '/../model.h5')
+            g_model.save('./model.h5')
 
 # load image data
 dataset = load_real_samples()
