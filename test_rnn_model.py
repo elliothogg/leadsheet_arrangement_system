@@ -24,8 +24,10 @@ def convert_note_vector_to_note_numbers(note_vector):
 
 prediction = probability_model.predict(x)
 
-print(convert_note_vector_to_note_numbers(x[4722]))
+index = 3860
 
-print(prediction[4722])
+print(convert_note_vector_to_note_numbers(x[index]))
 
-print(y[4722])
+print(prediction[index])
+
+print(y[index])
