@@ -16,6 +16,7 @@ from tensorflow.keras.layers import Concatenate
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import LeakyReLU
+from tensorflow.keras.utils import plot_model
 
 
 # load the training data
@@ -216,11 +217,17 @@ def train(d_model, g_model, gan_model, dataset, n_epochs=1, n_batch=1):
     n_patch = d_model.output_shape[1]
     # unpack dataset
     trainA, trainB = dataset
+
+
+
+    # more info on how to calculate below items here - https://machinelearningmastery.com/how-to-code-the-generative-adversarial-network-training-algorithm-and-loss-functions/
     # calculate the number of batches per training epoch
     bat_per_epo = int(len(trainA) / n_batch)
     # calculate the number of training iterations
     n_steps = bat_per_epo * n_epochs
     # manually enumerate epochs
+
+
     for i in range(n_steps):
         # select a batch of real samples
         [X_realA, X_realB], y_real = generate_real_samples(dataset, n_batch, n_patch)
@@ -249,6 +256,7 @@ d_model = define_discriminator(image_shape)
 g_model = define_generator(image_shape)
 
 d_model.summary()
+plot_model(d_model, to_file='discriminator_model_plot.png', show_shapes=True, show_layer_names=True)
 # define the composite model
 gan_model = define_gan(g_model, d_model, image_shape)
 # train model

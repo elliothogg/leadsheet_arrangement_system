@@ -130,7 +130,7 @@ def define_generator(image_shape=(256, 256, 3)):
     d7 = decoder_block(d6, e1, 64, dropout=False)
     # output
     g = Conv1D(image_shape[-1], (4), strides=(2), padding='same', kernel_initializer=init)(d7)
-    out_image = Activation('tanh')(g)
+    out_image = Activation('relu')(g)
     # define model
     model = Model(in_image, out_image)
     return model
@@ -163,6 +163,7 @@ def generate_real_samples(dataset, n_samples, patch_shape):
     X1, X2 = trainA[ix,:], trainB[ix,:]
     # generate 'real' class labels (1)
     y = ones((n_samples, patch_shape, patch_shape))
+    print("return: ", X1, X2, y)
     return [X1, X2], y
 
 
