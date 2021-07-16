@@ -127,9 +127,8 @@ def generate_fake_sample(g_model, source_chord):
     # source_chord = source[random_index]
     # print("source chord:", source_chord.shape)
     # print("source chord:", source_chord)
-    fake_chord = g_model.predict(np.array([source_chord]))
+    fake_chord = g_model.predict(source_chord)
     y = np.array([0]) # telling the discriminator that the chord within concat[source, chord] is FAKE
-    print("fake_chord: ",fake_chord)
     return fake_chord, y
 
 # generate samples and save as a plot and save the model
@@ -178,7 +177,6 @@ def train(d_model, g_model, gan_model, dataset, n_epochs=100, n_batch=1):
     for i in range(n_steps):
         # randomly select real chord
         [source, real_chord], real_label = select_real_sample(dataset)
-        print(source, real_chord, real_label)
         # generate fake chord using selected real chords source
         fake_chord, fake_label = generate_fake_sample(g_model, source)
 
@@ -190,8 +188,9 @@ def train(d_model, g_model, gan_model, dataset, n_epochs=100, n_batch=1):
         # train the generator using the discriminators loss
         g_loss = gan_model.train_on_batch(source, [real_label, real_chord])
 
+
         # summarize performance
-        print('>%d, d1_real_loss[%.3f] d_fake_loss[%.3f] g_loss[%.3f]' % (i+1, d_real_loss, d_fake_loss, g_loss))
+        print('>%d, d1_real_loss[%.3f] d_fake_loss[%.3f] g_loss[%s]' % (i+1, d_real_loss, d_fake_loss, g_loss))
         # summarize model performance
         if (i+1) % (bat_per_epo * 10) == 0:
             summarize_performance(i, g_model, dataset)
@@ -223,23 +222,23 @@ gen_model = generator_model()
 # test_input_output_shape("generator model", gen_model, source_chord, (88,))
 
 
-# # test discriminator models IO shape is correct
-# # select source chord to test generator model
-# # source_chord = np.array([dataset[0][0]])
-# # real_chord = np.array([dataset[1][0]])
+# test discriminator models IO shape is correct
+# select source chord to test generator model
+# source_chord = np.array([dataset[0][0]])
+# real_chord = np.array([dataset[1][0]])
 dis_model = discriminator_model()
-# # dis_model.summary()
-# # plot_model(dis_model, to_file='discriminator_model_plot.png', show_shapes=True, show_layer_names=True)
-# # test_input_output_shape("Discriminator model", dis_model, [source_chord, real_chord], (1,))
+# dis_model.summary()
+# plot_model(dis_model, to_file='discriminator_model_plot.png', show_shapes=True, show_layer_names=True)
+# test_input_output_shape("Discriminator model", dis_model, [source_chord, real_chord], (1,))
 
 
 # test GAN models IO shape is correct
 # select source chord to test generator model
-source_chord = np.array([dataset[0][0]])
+# source_chord = np.array([dataset[0][0]])
 c_gan_model = c_gan_model(dis_model, gen_model)
-c_gan_model.summary()
-plot_model(dis_model, to_file='discriminator_model_plot.png', show_shapes=True, show_layer_names=True)
-test_input_output_shape("C_GAN model", c_gan_model, source_chord, (1,))
+# c_gan_model.summary()
+# plot_model(dis_model, to_file='discriminator_model_plot.png', show_shapes=True, show_layer_names=True)
+# test_input_output_shape("C_GAN model", c_gan_model, source_chord, (1,))
 
 
 train(dis_model, gen_model, c_gan_model, dataset)
