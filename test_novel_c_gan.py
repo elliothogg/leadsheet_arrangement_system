@@ -19,7 +19,7 @@ def load_real_samples():
 
 
 dataset = load_real_samples()
-chord_index = 2
+chord_index = 20
 source_chord = dataset[0][chord_index]
 real_chord = dataset[1][chord_index]
 

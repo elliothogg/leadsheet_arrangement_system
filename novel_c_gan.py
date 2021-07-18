@@ -50,10 +50,10 @@ def discriminator_model():
     d0 = Dense(88, activation="relu")(merged)
     d1 = Dense(176, activation="relu")(d0)
     d2 = Dense(176, activation="relu")(d1)
-    d3 = Dense(12, activation="relu")(d2)
+    d3 = Dense(176, activation="relu")(d2)
     f = Flatten()(d3)
     # output layer with one neuron and sigmoid activation fuction (values between 0 - 1)
-    out = Dense(1, activation="sigmoid")(f)
+    out = Dense(88, activation="relu")(f)
     
     # define inputs and outputs
     discriminator_model = Model([in_source, in_chord], out, name="Discriminator")
@@ -116,7 +116,8 @@ def select_real_sample(dataset):
 
     source_chord = np.array([source[random_index]])
     real_chord = np.array([real_chords[random_index]])
-    y = np.array([np.array([1])])
+    y = np.array([np.ones(88, dtype='int8')])
+    print(y, y.shape)
     return [source_chord, real_chord], y
 
 def generate_fake_sample(g_model, source_chord):
@@ -128,7 +129,8 @@ def generate_fake_sample(g_model, source_chord):
     # print("source chord:", source_chord.shape)
     # print("source chord:", source_chord)
     fake_chord = g_model.predict(source_chord)
-    y = np.array([np.array([0])]) # telling the discriminator that the chord within concat[source, chord] is FAKE
+    y = np.array([np.zeros(88, dtype='int8')]) # telling the discriminator that the chord within concat[source, chord] is FAKE
+    print(y, y.shape)
     return fake_chord, y
 
 # generate samples and save as a plot and save the model
@@ -232,7 +234,7 @@ gen_model = generator_model()
 # source_chord = np.array([dataset[0][0]])
 # real_chord = np.array([dataset[1][0]])
 dis_model = discriminator_model()
-# dis_model.summary()
+dis_model.summary()
 # plot_model(dis_model, to_file='discriminator_model_plot.png', show_shapes=True, show_layer_names=True)
 # test_input_output_shape("Discriminator model", dis_model, [source_chord, real_chord], (1,))
 
