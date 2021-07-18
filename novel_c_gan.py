@@ -62,7 +62,7 @@ def discriminator_model():
     opt = Adam(learning_rate=0.0002, beta_1=0.5)
 
     # expermient with loss weights
-    discriminator_model.compile(optimizer=opt, loss='binary_crossentropy')
+    discriminator_model.compile(optimizer=opt, loss='binary_crossentropy', loss_weights=[0.5])
     return discriminator_model
 
 # generator will learn to map chords source to fake chords that maximise the loss of the discriminator
@@ -98,13 +98,13 @@ def c_gan_model(d_model, g_model):
     # feed the same chord source into the discriminator alongside the generated fake chord
     d_out = d_model([in_source, g_out])
 
-    # source chord as input, and [classification output from generator, Fake Chord from generator] as output
+    # source chord as input, and [classification output from discriminator, Fake Chord from generator] as output
     gan_model = Model(in_source, [d_out, g_out], name="c_gan_model")
 
     opt = Adam(learning_rate=0.0002, beta_1=0.5)
 
     # not sure about loss functions or loss_weights - need to read further
-    gan_model.compile(loss=['binary_crossentropy', 'mae'], optimizer=opt, loss_weights=[1, 100])
+    gan_model.compile(loss=['binary_crossentropy', 'mae'], optimizer=opt, loss_weights=[1,100])
     return gan_model
 
 
@@ -116,7 +116,7 @@ def select_real_sample(dataset):
 
     source_chord = np.array([source[random_index]])
     real_chord = np.array([real_chords[random_index]])
-    y = np.array([1])
+    y = np.array([np.array([1])])
     return [source_chord, real_chord], y
 
 def generate_fake_sample(g_model, source_chord):
@@ -128,7 +128,7 @@ def generate_fake_sample(g_model, source_chord):
     # print("source chord:", source_chord.shape)
     # print("source chord:", source_chord)
     fake_chord = g_model.predict(source_chord)
-    y = np.array([0]) # telling the discriminator that the chord within concat[source, chord] is FAKE
+    y = np.array([np.array([0])]) # telling the discriminator that the chord within concat[source, chord] is FAKE
     return fake_chord, y
 
 # generate samples and save as a plot and save the model
@@ -185,7 +185,11 @@ def train(d_model, g_model, gan_model, dataset, n_epochs=100, n_batch=1):
         # train the discriminator using fake chord and get the loss
         d_fake_loss = d_model.train_on_batch([source, fake_chord], fake_label)
 
+        print(source.shape, [real_label.shape, real_chord.shape])
+
+
         # train the generator using the discriminators loss
+        # the gan loss outputs a 3 dimentional vector, the first being the sum of the second and third - g_loss[0] = g_loss[1] + g_loss[2]
         g_loss = gan_model.train_on_batch(source, [real_label, real_chord])
 
 

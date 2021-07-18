@@ -255,9 +255,10 @@ print(image_shape)
 d_model = define_discriminator(image_shape)
 g_model = define_generator(image_shape)
 
-d_model.summary()
+# d_model.summary()
 plot_model(d_model, to_file='discriminator_model_plot.png', show_shapes=True, show_layer_names=True)
 # define the composite model
 gan_model = define_gan(g_model, d_model, image_shape)
+gan_model.summary()
 # train model
-train(d_model, g_model, gan_model, dataset)
+# train(d_model, g_model, gan_model, dataset)
