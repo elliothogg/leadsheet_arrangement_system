@@ -145,17 +145,17 @@ def summarize_performance(step, g_model, dataset, n_samples=3):
     for i in range(n_samples):
         pyplot.subplot(3, n_samples, 1 + i)
         pyplot.axis('off')
-        pyplot.imshow(source[i])
+        pyplot.plot(source)
     # plot generated target image
     for i in range(n_samples):
         pyplot.subplot(3, n_samples, 1 + n_samples + i)
         pyplot.axis('off')
-        pyplot.imshow(fake_chord[i])
+        pyplot.plot(fake_chord)
     # plot real target image
     for i in range(n_samples):
         pyplot.subplot(3, n_samples, 1 + n_samples*2 + i)
         pyplot.axis('off')
-        pyplot.imshow(real_chord[i])
+        pyplot.plot(real_chord)
     # save plot to file
     filename1 = 'plot_%06d.png' % (step+1)
     pyplot.savefig(filename1)
@@ -191,10 +191,11 @@ def train(d_model, g_model, gan_model, dataset, n_epochs=100, n_batch=1):
 
         # summarize performance
         print('>%d, d1_real_loss[%.3f] d_fake_loss[%.3f] g_loss[%s]' % (i+1, d_real_loss, d_fake_loss, g_loss))
-        # summarize model performance
-        if (i+1) % (bat_per_epo * 10) == 0:
-            summarize_performance(i, g_model, dataset)
-
+        # save model every 5000 runs
+        if i % 5000 == 0:
+            #save model
+            g_model.save('novel_c_gan.h5')
+    g_model.save('novel_c_gan.h5')
 
 # test if input and output shapes of each model are correct
 def test_input_output_shape(model_name, model, data_in, expected_out_shape):

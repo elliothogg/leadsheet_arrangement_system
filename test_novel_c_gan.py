@@ -1,6 +1,8 @@
-# import each model for testing
-from novel_c_gan import dis_model, gan_model, gen_model
 import pickle
+import tensorflow as tf
+from tensorflow.keras.models import load_model
+import numpy as np
+from note_name_to_number import note_number_to_name
 
 # import test data
 
@@ -14,20 +16,30 @@ def load_real_samples():
 
     return [source, real_chords]
 
-# test if input and output shapes of each model are correct
-def test_input_output_shape(model, data_in, expected_data_out_shape):
-    output = model.predict(data_in)
-    print(output)
 
 
 dataset = load_real_samples()
-# select a source chord vector
-source_chord = dataset[0][0]
-real_chord = dataset[1][0]
-
-# test discriminator model
-# test_input_output_shape(dis_model, [source_chord, real_chord], (88,) )
+chord_index = 2
+source_chord = dataset[0][chord_index]
+real_chord = dataset[1][chord_index]
 
 
-# test generator model
-test_input_output_shape(gen_model, source_chord, (88,) )
+generator = load_model('novel_c_gan.h5')
+
+generated_chord = generator.predict(np.array([source_chord]))
+
+
+def convert_note_numbers_to_names(note_vector):
+    note_names = []
+    index = 0
+    for note in note_vector:
+        if note == 1:
+            note_names.append(note_number_to_name[index + 1]) # add 1 to note as dictionary is 1 indexed
+        index = index + 1
+    return note_names
+
+
+print("source_chord:", source_chord[39:51])
+print("real_chord:", convert_note_numbers_to_names(real_chord))
+print("generated_chord:", convert_note_numbers_to_names(generated_chord[0]))
+
