@@ -1,8 +1,8 @@
-from chord_symbol_extractor import extract_leadsheet_data
 import numpy as np
 import os
 import sys
 import inspect
+import copy
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
@@ -10,11 +10,6 @@ sys.path.insert(0, parentdir)
 
 from note_name_to_number import noteMidiDB, chord_label_to_integer_notation, extensions_to_integer_notation
 
-file_path = "leadsheet_arranger/A_Time_for_Love-Bill_Evans.musicxml"
-
-leadsheet_data = extract_leadsheet_data(file_path)
-
-# print(leadsheet_data)
 
 def chords_to_array(leadsheet_data):
     chords = []
@@ -23,21 +18,17 @@ def chords_to_array(leadsheet_data):
             chords.append(chord)
     return chords
 
-chords = chords_to_array(leadsheet_data)
-
 # We ignore the root of the chord, as we are only concerned with the type. We will transpose chords back to their roots when creating arrangement
 def convert_chords_to_integer_notation(chords):
     chords_int = []
     for chord in chords:
-        chords_int.append({'chord': chord_label_to_integer_notation[chord['kind']], 'extensions': chord['extensions']})
-    print(chords_int)
+        chords_int.append({'notes': chord_label_to_integer_notation[chord['kind']].copy(), 'extensions': chord['extensions']}) # we have to make a copy of chord integer array
     return chords_int
 
 def add_extensions_to_chord_integer_notation(chords_int_notation):
     chords_int_exten = []
     for chord in chords_int_notation:
-        print(chord)
-        chord_inc_extensions = chord['chord']
+        chord_inc_extensions = chord['notes'].copy()
         for extension in chord['extensions']:
             note_int = int(extensions_to_integer_notation[extension['degree']]) + int(extension['alter'])
             type = extension['type']
@@ -50,16 +41,26 @@ def add_extensions_to_chord_integer_notation(chords_int_notation):
                     pass
                 chord_inc_extensions.append(note_int)
                 #convert to dict to remove duplicates then back to list
-            # print(chord_inc_extensions, extension, note_int)
+        chords_int_exten.append(sorted(chord_inc_extensions))
+    return chords_int_exten
 
-def embed_chords(chords):
+def embed_chords_88_vectors(chords):
     embedded_chords = []
     C4 = noteMidiDB['C4'] - 1 # needs to be 0 indexed
     for chord in chords:
-        chord_integer_notation = chord_label_to_integer_notation[chord['kind']]
-        print(chord_integer_notation)
-        embedding_array = np.zeros(88, dtype='int8')
-        for i in range(C4, C4 + 12):
-            print(i)
+        chord_88 = np.zeros(88, "int8")
+        for note in chord:
+            chord_88[C4 + note] = 1
+        embedded_chords.append(chord_88)
+    return embedded_chords
 
-chords = add_extensions_to_chord_integer_notation(convert_chords_to_integer_notation(chords))
+
+def embed_chords(leadsheet_data):
+    chords = chords_to_array(leadsheet_data)
+    chords_int = convert_chords_to_integer_notation(chords)
+
+    chords_int_ext = add_extensions_to_chord_integer_notation(chords_int)
+
+    embedded_chords = embed_chords_88_vectors(chords_int_ext)
+
+    return embedded_chords

@@ -29,7 +29,8 @@ def get_time_signature(attri_ele):
     note_value = time_ele.find('beat-type').text
     return [beats, note_value]
 
-
+def get_divisions(attri_ele):
+    return attri_ele.find('divisions')
 # here we pass in a bar, and return the chord symbols with their extensions, as well as the notes that fall on the chords beat in the bar. The latter
 # note information helps to arrange the chord
 def get_chord_data(bar):
@@ -90,22 +91,19 @@ def extract_extensions(degree_eles):
     return extensions
 
 
-def extract_leadsheet_data(file_path):
-
-    # convert xml file to element tree
-    tree = ET.parse(file_path)
-    root = tree.getroot()
-
-    all_bars = root.find('part').findall('measure')
+def extract_leadsheet_data(xml_tree):
+    all_bars = xml_tree.find('part').findall('measure')
     attribute_element = all_bars[0].find('attributes') # contains all meta info about song (key/time signature etc)
 
     # get key and time signature
     key_sig = get_key_signature(attribute_element)
     time_sig = get_time_signature(attribute_element)
+    divisions = get_divisions(attribute_element)
     
     song_data = {
         "key": key_sig,
         "time": time_sig,
+        "divisions": divisions,
         "bars": [],
     }
 
