@@ -30,7 +30,7 @@ def get_time_signature(attri_ele):
     return [beats, note_value]
 
 def get_divisions(attri_ele):
-    return attri_ele.find('divisions')
+    return attri_ele.find('divisions').text
 # here we pass in a bar, and return the chord symbols with their extensions, as well as the notes that fall on the chords beat in the bar. The latter
 # note information helps to arrange the chord
 def get_chord_data(bar):

@@ -17,6 +17,9 @@ def load_real_samples():
 
 dataset = load_real_samples()
 
+print(dataset)
+print(dataset[0][0])
+print(dataset[1][0])
 
 # Random testing
 
@@ -50,8 +53,10 @@ def discriminator_model():
     d0 = Dense(88, activation="relu")(merged)
     d1 = Dense(176, activation="relu")(d0)
     d2 = Dense(176, activation="relu")(d1)
-    d3 = Dense(12, activation="relu")(d2)
-    f = Flatten()(d3)
+    d3 = Dense(88, activation="relu")(d2)
+    d4 = Dense(44, activation="relu")(d3)
+    d5 = Dense(22, activation="relu")(d4)
+    f = Flatten()(d5)
     # output layer with one neuron and sigmoid activation fuction (values between 0 - 1)
     out = Dense(1, activation="relu")(f)
     
@@ -64,7 +69,7 @@ def discriminator_model():
 
     # expermient with loss weights
     loss = tf.keras.losses
-    discriminator_model.compile(optimizer=opt, loss=loss)
+    discriminator_model.compile(optimizer=opt, loss='binary_crossentropy')
     return discriminator_model
 
 # generator will learn to map chords source to fake chords that maximise the loss of the discriminator

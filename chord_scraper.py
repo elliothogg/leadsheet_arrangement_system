@@ -5,6 +5,7 @@ from stored_chords import stored_chords
 import copy
 import numpy as np
 import pickle
+import csv
 
 chords = stored_chords
 chords_in_c = []
@@ -420,7 +421,6 @@ def create_1d_training_data():
         label_88 = np.zeros(76, dtype='int8') # length 76 to account for 12 note label vector to be added
         C4 = noteMidiDB['C4'] - 1 # needs to be 0 indexed
         label_88 = np.insert(label_88, C4, chord['label']) # inserts the 12 note label vector at the position of C4
-        print(label_88)
         trainy[index] = label_88
         index = index + 1
     training_data_1d = (trainX, trainy)
@@ -437,6 +437,26 @@ def write_training_data():
         pickle.dump(training_data_2d, file)
 
 
+def write_training_data_csv_note_numbers():
+    with open('training_data_note_numbers.csv', mode='w') as csv_file:
+        fieldnames = ['label', 'notes']
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        for chord in chords_in_c:
+            label = chord['type']
+            notes = ",".join(map(str, chord['note_numbers']))
+            writer.writerow({'label': label, 'notes': notes})
+    
+
+def write_training_data_csv_note_vectors():
+    with open('training_data_note_vectors.csv', mode='w') as csv_file:
+        fieldnames = ['label', 'notes']
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        for chord in chords_in_c:
+            label = chord['type']
+            notes = ",".join(map(str, chord['notes']))
+            writer.writerow({'label': label, 'notes': notes})
 
 
 def main():
@@ -456,12 +476,15 @@ def main():
 
     
     create_chord_label_vectors()
+    
+    write_training_data_csv_note_numbers()
 
     convert_notes_to_88_key_vectors()
     convert_labels_to_numpy_arrays() #use binary number instead
 
 
     # chords_pretty_print(chords_in_c)
+    write_training_data_csv_note_vectors()
 
     create_training_data()
     create_1d_training_data()
@@ -469,8 +492,6 @@ def main():
 
     write_training_data()
 
-    print(training_data[1][0])
-    print(training_data_1d[1][0])
 
 
 main()
