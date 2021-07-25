@@ -6,8 +6,10 @@ import copy
 import numpy as np
 import pickle
 import csv
+import argparse
 
-chords = stored_chords
+
+chords = []
 chords_in_c = []
 training_data = ()
 training_data_1d = ()
@@ -17,6 +19,12 @@ index_of_inverted_chords = []
 deviation = 20 #allows notes either-side of the chord location to be included in the chord (notes next to each other in a chord are usually ofset on the x-axis)
 directory = "./fully_arranged_standards_musicxml" #directory of musicXML files
 
+def set_deviation(deviation_amm):
+    global deviation
+    deviation = deviation_amm
+    
+def set_directory(direc):
+    directory = direc
 
 def alter_note(note, step):
     if step == "1":
@@ -92,7 +100,7 @@ def get_chords_meta(file_name):
                 extension = alter_note(extension, degree_alter)
             if ("<degree-type" in line) and (harmony_found):
                 degree_type = re.search(r"(?<=>)(.*?)(?=<\/degree-type>)", line).group(1)
-                if degree_type != "subtract":
+                if degree_type == "add":
                     extensions.append(extension)
             if ("<note default-x" in line) and (harmony_found ):
                 chord_x_location = re.search(r"(?<=default-x=\")(.*?)(?=\")", line).group(1)
@@ -176,7 +184,7 @@ def flatten_chords():
 
 
 def gather_chord_type_meta_data():
-    for chord in stored_chords:
+    for chord in chords:
         if chord['type'] in chords_meta_data:
             chords_meta_data[chord['type']] = chords_meta_data[chord['type']] + 1
         else: chords_meta_data[chord['type']] = 1
@@ -313,7 +321,7 @@ def create_chord_label_vectors():
             for extension in chord['extensions']:
                 error = False
                 modifier = 0
-                if "b" in extension[-1] or "#" in extension[-1]:
+                if "b" in extension[-1] or "#" in extension[-1]: # [-1] gets last char in string
                     accidental = extension[-1]
                 else: accidental = False
                 string_ofset = 1 if accidental else 0
@@ -444,7 +452,7 @@ def write_training_data_csv_note_numbers():
         writer.writeheader()
         for chord in chords_in_c:
             label = chord['type']
-            notes = ",".join(map(str, chord['note_numbers']))
+            notes = "".join(map(str, chord['note_numbers']))
             writer.writerow({'label': label, 'notes': notes})
     
 
@@ -455,41 +463,42 @@ def write_training_data_csv_note_vectors():
         writer.writeheader()
         for chord in chords_in_c:
             label = chord['type']
-            notes = ",".join(map(str, chord['notes']))
+            notes = "".join(map(str, chord['notes']))
             writer.writerow({'label': label, 'notes': notes})
 
 
 def main():
-    # mine_chords_from_dir(directory)
-    # flatten_chords()
-    # remove_invalid_chords()
-    # add_note_numbers()
-    # sort_notes()
+    # user_dir = ""
+    # user_deviation = 0
 
-    # chords_pretty_print(chords)
+    # parser = argparse.ArgumentParser(description="Chord Scraper Tool")
 
+    # parser.add_argument('Input Directory', nargs='?', metavar='input_dir_path', type=str, help="path to input directory")
+
+    # args = parser.parse_args()
+    # print(args)
+
+    mine_chords_from_dir(directory)
+    flatten_chords()
+    remove_invalid_chords()
+    add_note_numbers()
+    sort_notes()
     count_num_inverted_chords()
     transpose_chords_to_key_c()
     test_transpose_to_c()
     transpose_extreme_octaves()
     test_transpose_extreme_octaves()
-
-    
     create_chord_label_vectors()
     
     write_training_data_csv_note_numbers()
-
+    
     convert_notes_to_88_key_vectors()
     convert_labels_to_numpy_arrays() #use binary number instead
-
-
-    # chords_pretty_print(chords_in_c)
+    
     write_training_data_csv_note_vectors()
-
     create_training_data()
     create_1d_training_data()
     create_2d_training_data()
-
     write_training_data()
 
 
