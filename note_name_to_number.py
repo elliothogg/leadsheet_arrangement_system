@@ -582,3 +582,10 @@ extensions_to_integer_notation = {
     "4": 5,
     "2": 2
 }
+
+unwanted_chord_tones = {
+    "major-seventh": [1, 3, 5, 8, 10],
+    "minor-seventh": [1, 4, 6, 8, 11],
+    "dominant": [],
+    "major": [1, 3, 5, 6, 8, 10],
+}

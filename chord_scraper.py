@@ -18,6 +18,7 @@ chords_meta_data = {}
 index_of_inverted_chords = []
 deviation = 20 #allows notes either-side of the chord location to be included in the chord (notes next to each other in a chord are usually ofset on the x-axis)
 directory = "./fully_arranged_standards_musicxml" #directory of musicXML files
+verbose = False
 
 def set_deviation(deviation_amm):
     global deviation
@@ -25,6 +26,9 @@ def set_deviation(deviation_amm):
     
 def set_directory(direc):
     directory = direc
+
+def set_verbose(bool):
+    verbose = bool
 
 def alter_note(note, step):
     if step == "1":
@@ -151,9 +155,10 @@ def count_degree_tags(file_name): #checks there is an equal amount of degree-val
                 num_degree_alt = num_degree_alt + 1
             if ("<degree-type" in line):
                 num_degree_type = num_degree_type + 1
-    print(file_name + " " + "degree tags equal? ", num_degree_val, num_degree_alt, num_degree_type, (num_degree_val == num_degree_alt == num_degree_type))
+    if (verbose):
+        print(file_name + " " + "degree tags equal? ", num_degree_val, num_degree_alt, num_degree_type, (num_degree_val == num_degree_alt == num_degree_type))
 
-
+# utility function
 def print_chords_with_extensions(chords):
     print("\nCHORDS WITH EXTENSIONS:\n")
     for chord in chords:
@@ -193,6 +198,8 @@ def gather_chord_type_meta_data():
 def print_num_chords():
     print(len(chords))
 
+
+# utility function
 def chords_pretty_print(chords_in):
     j=0
     for chord in chords_in:
@@ -215,7 +222,7 @@ def count_num_inverted_chords():
             count = count + 1
             index_of_inverted_chords.append(index)
         index = index + 1
-    print ("number of inverted chords: ", count)
+    print ("Number of inverted chords: ", count)
     return count
 
 def transpose_chords_to_key_c():
@@ -466,24 +473,34 @@ def write_training_data_csv_note_vectors():
             notes = "".join(map(str, chord['notes']))
             writer.writerow({'label': label, 'notes': notes})
 
+    
 
 def main():
-    # user_dir = ""
-    # user_deviation = 0
+    user_dir = ""
+    user_deviation = 0
 
-    # parser = argparse.ArgumentParser(description="Chord Scraper Tool")
+    parser = argparse.ArgumentParser(description="Chord Scraper Tool")
 
-    # parser.add_argument('Input Directory', nargs='?', metavar='input_dir_path', type=str, help="path to input directory")
+    parser.add_argument('input_directory', nargs='?', type=str, help="path to input directory")
+    parser.add_argument('-v', '--verbose', action='store_const', const='err', help="log parsing actions and errors")
+    
+    parser
+    args = parser.parse_args()
+    print(args)
 
-    # args = parser.parse_args()
-    # print(args)
-
+    if (args.input_directory != None):
+        set_directory(args.input_directory)
+        
+    if(args.verbose != None):
+        set_verbose(True)
+    
     mine_chords_from_dir(directory)
     flatten_chords()
     remove_invalid_chords()
     add_note_numbers()
     sort_notes()
-    count_num_inverted_chords()
+    if (verbose):
+        count_num_inverted_chords()
     transpose_chords_to_key_c()
     test_transpose_to_c()
     transpose_extreme_octaves()
@@ -495,16 +512,16 @@ def main():
     convert_notes_to_88_key_vectors()
     convert_labels_to_numpy_arrays() #use binary number instead
     
-    write_training_data_csv_note_vectors()
-    create_training_data()
-    create_1d_training_data()
-    create_2d_training_data()
-    write_training_data()
+    # write_training_data_csv_note_vectors()
+    # create_training_data()
+    # create_1d_training_data()
+    # create_2d_training_data()
+    # write_training_data()
 
-
+    if (verbose):
+        gather_chord_type_meta_data()
 
 main()
 
-gather_chord_type_meta_data()
 
 

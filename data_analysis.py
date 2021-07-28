@@ -2,7 +2,8 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
-from note_name_to_number import note_number_to_name
+from note_name_to_number import note_number_to_name, unwanted_chord_tones, noteMidiDB
+import copy
 
 df = pd.read_csv('training_data_note_vectors.csv')
 
@@ -107,26 +108,70 @@ notes = np.arange(start=1, stop=89, step=1)
 
 # plot as bar chart
 
-def plot_chords_bar_chart(chords_array):
-    barWidth = 0.5
+# Iterate through each octave (set of 12 notes) in the array and remove notes found in the chords unwanted tones list
+# We start at the first octave note 3, and end at note 86.
+def remove_unwanted_chord_tones(chord_array, label):
+    cleaned_chord_array = copy.deepcopy(chord_array)
+    for chord in cleaned_chord_array:
+        for idx, note in enumerate(chord):
+            if chord[idx] == 1 and note_as_integer_notation(idx) in unwanted_chord_tones[label]:
+                chord[idx] = 0
+    return cleaned_chord_array
+
+# takes a note in its vector representation (integer between 0-87)
+# and converts it to its integer_notation representation (number between 0-11)
+def note_as_integer_notation(note):
+    return (note + 9) % 12
+
+def plot_chords_bar_chart(chords_array, title):
+    plt.figure(figsize=(25,10), dpi=400)
+    barWidth = 0.7
     cum_size = np.zeros(88)
-    for idx, chord in enumerate(dominant_chords_array):
-        plt.bar(notes, dominant_chords_array[idx], bottom=cum_size, width=barWidth)
-        cum_size += dominant_chords_array[idx]
+    for idx, chord in enumerate(chords_array):
+        plt.bar(notes, chords_array[idx], bottom=cum_size, width=barWidth)
+        cum_size += chords_array[idx]
     x_ticks = list(note_number_to_name.values())
     x_ticks.reverse()
 
     # Custom X axis
-    plt.xticks(notes, x_ticks, fontsize=6)
+    plt.xticks(notes, x_ticks, fontsize=8, weight='bold', rotation=45)
 
     plt.xlabel("Notes")
     plt.ylabel("Occurences")
-    plt.title(str(chords_array))
-    plt.show()
+    plt.title(title)
+    plt.savefig(title.lower().replace(" ", "_") + ".png")
 
 
-plot_chords_bar_chart(major_seventh_chords)
+# We do not want to generate chords that will have notes that are higher in pitch than their accompanying melody notes
+# Removes all notes above G4
+def reduce_high_pitch_notes(chord_array):
+    chord_array_reduced = copy.deepcopy(chord_array)
+    for chord in chord_array_reduced:
+        g4 = noteMidiDB['G4'] - 1 # make 0 indexed
+        chord[g4:87] = 0
+    return chord_array_reduced
 
-print(dominant_chords.dtypes)
+plot_chords_bar_chart(major_seventh_chords_array, "Major Seventh Chords Uncleaned")
+plot_chords_bar_chart(minor_seventh_chords_array, "Minor Seventh Chords Uncleaned")
+plot_chords_bar_chart(major_chords_array, "Major Chords Uncleaned")
+plot_chords_bar_chart(dominant_chords_array, "Dominant Seventh Chords Uncleaned")
 
-print(dominant_chords)
+major_seventh_chords_array_cleaned = remove_unwanted_chord_tones(major_seventh_chords_array, "major-seventh")
+minor_seventh_chords_array_cleaned = remove_unwanted_chord_tones(minor_seventh_chords_array, "minor-seventh")
+major_chords_array_cleaned = remove_unwanted_chord_tones(major_chords_array, "major")
+dominant_chords_array_cleaned = remove_unwanted_chord_tones(dominant_chords_array, "dominant")
+
+plot_chords_bar_chart(major_seventh_chords_array_cleaned, "Major Seventh Chords Cleaned")
+plot_chords_bar_chart(minor_seventh_chords_array_cleaned, "Minor Seventh Chords Cleaned")
+plot_chords_bar_chart(major_chords_array_cleaned, "Major Chords Cleaned")
+plot_chords_bar_chart(dominant_chords_array_cleaned, "Dominant Seventh Chords Cleaned")
+
+major_seventh_chords_array_cleaned_reduced = reduce_high_pitch_notes(major_seventh_chords_array_cleaned)
+minor_seventh_chords_array_cleaned_reduced = reduce_high_pitch_notes(minor_seventh_chords_array_cleaned)
+major_chords_array_cleaned_reduced = reduce_high_pitch_notes(major_chords_array_cleaned)
+dominant_chords_array_cleaned_reduced = reduce_high_pitch_notes(dominant_chords_array_cleaned)
+
+plot_chords_bar_chart(major_seventh_chords_array_cleaned_reduced, "Major Seventh Chords Cleaned and Reduced")
+plot_chords_bar_chart(minor_seventh_chords_array_cleaned_reduced, "Minor Seventh Chords Cleaned and Reduced")
+plot_chords_bar_chart(major_chords_array_cleaned_reduced, "Major Chords Cleaned and Reduced")
+plot_chords_bar_chart(dominant_chords_array_cleaned_reduced, "Dominant Seventh Chords Cleaned and Reduced")
