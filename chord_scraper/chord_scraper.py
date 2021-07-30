@@ -1,6 +1,6 @@
 import re
 import os
-from note_name_to_number import noteMidiDB, transpose_to_c, extensions_to_integer_notation, chord_label_to_integer_notation
+from utils_dict import noteMidiDB, transpose_to_c, extensions_to_integer_notation, chord_label_to_integer_notation
 from stored_chords import stored_chords
 import copy
 import numpy as np
