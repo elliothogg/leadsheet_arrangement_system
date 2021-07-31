@@ -1,12 +1,13 @@
 import re
 import os
-from utils_dict import noteMidiDB, transpose_to_c, extensions_to_integer_notation, chord_label_to_integer_notation
+from utils_dict import noteMidiDB, transpose_to_c, extensions_to_integer_notation, chord_label_to_integer_notation, alter_dict
 from stored_chords import stored_chords
 import copy
 import numpy as np
 import pickle
 import csv
 import argparse
+import xml.etree.ElementTree as ET
 
 
 chords = []
@@ -18,17 +19,29 @@ chords_meta_data = {}
 index_of_inverted_chords = []
 deviation = 20 #allows notes either-side of the chord location to be included in the chord (notes next to each other in a chord are usually ofset on the x-axis)
 directory = "./fully_arranged_standards_musicxml" #directory of musicXML files
+out_dir = ""
 verbose = False
+meta = False
 
 def set_deviation(deviation_amm):
     global deviation
     deviation = deviation_amm
     
-def set_directory(direc):
+def set_in_directory(direc):
+    global directory
     directory = direc
+    
+def set_out_directory(direc):
+    global out_dir
+    out_dir = direc
 
 def set_verbose(bool):
+    global verbose
     verbose = bool
+
+def set_meta(bool):
+    global meta
+    meta = bool
 
 def alter_note(note, step):
     if step == "1":
@@ -68,48 +81,99 @@ def return_invalid_chords(chords):
         i = i + 1
     return invalid_chord_indices
 
-
 def get_chords_meta(file_name):
-    harmony_found = False
-    line_number = 0
-    chord_root = ""
-    chord_type = ""
-    degree_alter = ""
-    extensions = []
-    extension = ""
-    root_alter= ""
     current_songs_chords = []
-    with open(file_name) as topo_file:
-        for line in topo_file:
-            line_number += 1
-            if "<measure number" in line: # try an xml parser https://docs.python.org/3/library/xml.etree.elementtree.html
-                measure = re.search(r"(?<=number=\")(.*?)(?=\")", line).group(1)
-            if "<root-step" in line:
-                extensions = []
-                harmony_found = True
-                chord_root = re.search(r"(?<=>)(.*?)(?=<\/root-step>)", line).group(1)
-            if "<root-alter" in line:
-                root_alter = re.search(r"(?<=>)(.*?)(?=<\/root-alter>)", line).group(1)
-                chord_root = alter_note(chord_root, root_alter)
-            if ("<kind" in line) and (harmony_found):
-                chord_type = re.search(r"(?<=>)(.*?)(?=<\/kind>)", line).group(1)
-                if (chord_type =="other") and (re.search(r"(?<=text=\")(.*?)(?=\")", line).group(1) == "°"):
-                    chord_type = "diminished"
-            if ("<degree-value" in line) and (harmony_found):
-                extension = re.search(r"(?<=>)(.*?)(?=<\/degree-value>)", line).group(1)
-            if ("<degree-alter" in line) and (harmony_found):
-                degree_alter = re.search(r"(?<=<degree-alter>)(.*?)(?=<\/degree-alter>)", line).group(1)
-                extension = alter_note(extension, degree_alter)
-            if ("<degree-type" in line) and (harmony_found):
-                degree_type = re.search(r"(?<=>)(.*?)(?=<\/degree-type>)", line).group(1)
-                if degree_type == "add":
-                    extensions.append(extension)
-            if ("<note default-x" in line) and (harmony_found ):
-                chord_x_location = re.search(r"(?<=default-x=\")(.*?)(?=\")", line).group(1)
-                current_songs_chords.append({'root_note': chord_root, 'type': chord_type, 'extensions': extensions, 'notes_x_location': chord_x_location, 'measure': measure, 'notes': []})
-                harmony_found = False
-    print(current_songs_chords)
+    tree = ET.parse(file_name)
+    root = tree.getroot()
+    all_bars = root.find('part').findall('measure')
+    for bar in all_bars:
+        bar_chords = get_chords_from_bar(bar)
+        if (bar_chords == None): continue
+        for chord in bar_chords:
+            current_songs_chords.append(chord)
     get_chord_notes(file_name, current_songs_chords)
+    
+
+def get_chords_from_bar(bar):
+    bar_number = bar.attrib['number']
+    bar_chords = []
+    chords = bar.findall('harmony')
+    if (len(list(chords)) == 0): return
+    for chord_ele in chords:
+        extensions = {}
+        harmony_ele = chord_ele
+        degree_eles = harmony_ele.findall('degree') # each <degree> element contains a chord extension
+        chord = convert_root_ele_to_chord_sym(harmony_ele)
+        if (chord == None):
+            continue
+        chord["extensions"] = []
+        notes_location = get_chord_notes_location(harmony_ele, bar)
+        if (notes_location == None): continue
+        chord["notes_x_location"] = notes_location
+        chord["measure"] = bar_number
+        chord["notes"] = []
+
+        if (degree_eles):
+            extensions = extract_extensions(degree_eles)
+            chord["extensions"] = extensions
+        
+        bar_chords.append(chord)
+    return bar_chords
+
+def get_chord_notes_location(harmony_ele, bar):
+    harmony_ele_index = list(bar).index(harmony_ele)
+    number_of_eles_in_bar = (len(list(bar)))
+
+    for i in range(harmony_ele_index, number_of_eles_in_bar, 1):
+        if (bar[i].tag == "note" and len(list(bar[i].attrib)) > 1): # if element is note and has x and y note attributes then return default-x
+            return bar[i].attrib["default-x"]
+    # if note element is not found, then print error
+    if (verbose): print('Error - x-location of chord symbol could not be located. Chord will be removed')
+    return None
+
+
+def extract_extensions(degree_eles):
+    extensions = []
+    for degree in degree_eles:
+        value = degree.find('degree-value').text
+        if (value == None): continue # if degree-value is empty, do not add extension to extensions list
+        alter = ""
+        try:
+            alter = degree.find('degree-alter').text
+        except Exception:
+            pass
+        degree_type = degree.find('degree-type').text
+        extensions.append({"degree": value, "alter": alter, "type": degree_type})
+    return extensions
+
+def convert_root_ele_to_chord_sym(harmony_ele):
+    root_ele = harmony_ele.find('root') # <root> element encapsulates chord symbols
+    try:
+        chord_root = root_ele.find('root-step').text
+    except:
+        return None
+    root_adjust = ""
+    try:
+        root_adjust = root_ele.find('root-alter').text
+    except Exception:
+        pass
+    if (root_adjust):
+        chord_root = chord_root + alter_dict[root_adjust]
+    chord_type = harmony_ele.find('kind').text
+    bass_note = ""
+    bass_adjust = ""
+    try:
+        bass_note = harmony_ele.find('bass').find('bass-step').text
+    except Exception:
+        pass
+    try:
+        bass_adjust = harmony_ele.find('bass').find('bass-alter').text
+    except Exception:
+        pass
+    if (bass_adjust):
+        bass_note = bass_note + alter_dict[bass_adjust]
+    return {'root_note': chord_root, 'type': chord_type}
+
 
 def get_chord_notes(file_name, current_songs_chords):
     note_found = False
@@ -133,7 +197,7 @@ def get_chord_notes(file_name, current_songs_chords):
                     chord['notes'].append(note)
                     note_found = False
     chords.append(current_songs_chords)
-                    
+
 def remove_invalid_chords():
     global chords 
     invalid_chords = return_invalid_chords(chords)
@@ -180,6 +244,8 @@ def mine_chords_from_dir(directory):
             print(os.path.join(directory, filename))
             # count_degree_tags(filename) # checks if degree tags are even, essential for extensions to be gathered correctly
             get_chords_meta(os.path.join(directory, filename))
+    print()
+    print("Chord scraper has finished. Please find output at" + out_dir)
 
 def flatten_chords():
     global chords 
@@ -220,7 +286,7 @@ def count_num_inverted_chords():
             count = count + 1
             index_of_inverted_chords.append(index)
         index = index + 1
-    print ("Number of inverted chords: ", count)
+    if (verbose): print ("Number of inverted chords: ", count)
     return count
 
 def transpose_chords_to_key_c():
@@ -264,8 +330,8 @@ def test_transpose_to_c():
             bottom_note_counts[chord['note_numbers'][0]] = 1
         index = index + 1
     if count != num_of_inverted_chords:
-        print ("error - transpose function not working: expected num of inverted chords: ", num_of_inverted_chords, ". actual ", count)
-        print ("chords with errors:")
+        if (verbose): print ("Error - transpose function not working: expected num of inverted chords: ", num_of_inverted_chords, ". actual ", count)
+        if (verbose): print ("Chords with errors:")
         find_incorrectly_transposed_chords(index_of_inverted_transposed_chords)
         return False
     else:
@@ -275,7 +341,7 @@ def test_transpose_to_c():
 def find_incorrectly_transposed_chords(index_of_inverted_transposed_chords):
     for chord in index_of_inverted_chords:
         if chord not in index_of_inverted_transposed_chords:
-            print(chords[chord])
+            if (verbose): print(chords[chord])
 
 
 def transpose_extreme_octaves():
@@ -296,12 +362,12 @@ def transpose_extreme_octaves():
         if note[len(note)-1] > 88:
             out_of_range_chords.append(index)
         index = index + 1
-    print(len(out_of_range_chords), "chords have outlying voicings. Removing from array:")
+    if (verbose): print(len(out_of_range_chords), "chords have outlying voicings. Removing from array:")
     out_of_range_chords.sort(reverse=True) # reverse the order of the invalid chords indices as need to remove from list in reverse order
     for index in out_of_range_chords:
         del chords_in_c[index]
-        print("chord at index ", index, "deleted")
-    print(len(chords_in_c))
+        if (verbose): print("chord at index ", index, "deleted")
+    if (verbose): print(len(chords_in_c))
     
 
 
@@ -309,9 +375,9 @@ def test_transpose_extreme_octaves(is_user_test=True):
     global chords_in_c
     for chord in chords_in_c:
         if chord['note_numbers'][0] < 16 or chord['note_numbers'][0] > 40:
-            if is_user_test: print("Error - some chords still in extreme octaves")
+            if is_user_test and (verbose): print("Error - some chords still in extreme octaves")
             return False
-    if is_user_test: print("Success - all chords in desirable range")
+    if is_user_test and (verbose): print("Success - all chords in desirable range")
     return True
     
 def create_chord_label_vectors():
@@ -319,40 +385,36 @@ def create_chord_label_vectors():
     invalid_chord_types_index = []
     for chord in chords_in_c:
         label = []
+        try:
+            label = copy.deepcopy(chord_label_to_integer_notation[chord['type']]) #convert chord label to set of associated notes as integer notations
+        except:
+            if (verbose): print("Error - unrecognised chord label -", chord['type'], ". Need to add chord label to chord_label_to_integer_notation inside note_name_to_number.py")
+            invalid_chord_types_index.append(index)
+            index = index + 1
+            continue
         if len(chord['extensions']) > 0: #convert any extensions to integer notation and add to label array
             for extension in chord['extensions']:
-                error = False
-                modifier = 0
-                if "b" in extension[-1] or "#" in extension[-1]: # [-1] gets last char in string
-                    accidental = extension[-1]
-                else: accidental = False
-                string_ofset = 1 if accidental else 0
-                scale_degree = extension[0: (len(extension) - string_ofset)]
-                integer_notation  = 0
                 try:
-                    integer_notation = extensions_to_integer_notation[scale_degree]
+                    note_int = int(extensions_to_integer_notation[extension['degree']]) + int(extension['alter'])
                 except:
-                    print("Error - unrecognised extension integer:", scale_degree, ". Need to add extension to extensions_to_integer_notation inside note_name_to_number.py")
-                    error = True
-                if (accidental):
-                    modifier = 1 if accidental == "#" else -1
-                if error == False:
-                    label.append(integer_notation + modifier)
+                    if (verbose): print("Error - unrecognised extension integer:", extension['degree'], ". Need to add extension to extensions_to_integer_notation inside note_name_to_number.py")
+                    continue
+                if (type == "alter"): # if type == alter, then remove note and add altered version
+                    try:
+                        label.remove(extensions_to_integer_notation[extension['degree']])
+                    except Exception:
+                        pass
+                label.append(note_int)
         del chord['extensions']
-        try:
-            label = label + chord_label_to_integer_notation[chord['type']] #convert chord label to set of associated notes as integer notations
-        except:
-            print("Error - unrecognised chord label -", chord['type'], ". Need to add chord label to chord_label_to_integer_notation inside note_name_to_number.py")
-            invalid_chord_types_index.append(index)
+        label = list(set(label))
         label.sort()
         chord['label'] = label
-        # del chord ['type']
         index = index + 1
     invalid_chord_types_index.sort(reverse=True) # reverse the order of the invalid chords indices as need to remove from list in reverse order
-    print("total invalid chord types: ", len(invalid_chord_types_index))
-    print("deleting now:")
+    if (verbose): print("total invalid chord types: ", len(invalid_chord_types_index))
+    if (verbose): print("deleting now:")
     for index in invalid_chord_types_index:
-        print("deleting chord at index", index, ". Type was invalid:")
+        if (verbose): print("deleting chord at index", index, ". Type was invalid:")
         del chords_in_c[index]
     
 
@@ -476,25 +538,37 @@ def main():
 
     parser = argparse.ArgumentParser(description="Chord Scraper Tool")
 
-    parser.add_argument('input_directory', nargs='?', type=str, help="path to input directory")
-    parser.add_argument('-v', '--verbose', action='store_const', const='err', help="log parsing actions and errors")
+    parser.add_argument('input_directory', nargs='?', type=str, help="path to input directory. Default is current directory.")
+    parser.add_argument('output_directory', nargs='?', type=str, help="path to output directory. Default is current directory.")
+    parser.add_argument('-v', '--verbose', action='store_const', const='verbose', help="log parsing actions and errors.")
+    parser.add_argument('-m', '--meta', action='store_const', const='meta', help="output meta information about extracted data.")
     
     parser
     args = parser.parse_args()
     print(args)
 
     if (args.input_directory != None):
-        set_directory(args.input_directory)
-        
+        set_in_directory(args.input_directory)
+    
+    if (args.output_directory != None):
+        set_out_directory(args.output_directory)
+    
     if(args.verbose != None):
         set_verbose(True)
+
+    if(args.meta != None):
+        set_meta(True)
     
     mine_chords_from_dir(directory)
     flatten_chords()
+
+    if (meta):
+        chords_pretty_print(chords)
+
     remove_invalid_chords()
     add_note_numbers()
     sort_notes()
-    if (verbose):
+    if (meta):
         count_num_inverted_chords()
     transpose_chords_to_key_c()
     test_transpose_to_c()
@@ -513,7 +587,7 @@ def main():
     # create_2d_training_data()
     # write_training_data()
 
-    if (verbose):
+    if (meta):
         gather_chord_type_meta_data()
 
 main()

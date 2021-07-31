@@ -479,6 +479,10 @@ transpose_to_c = {
         "up": 2,
         "down": -10
     },
+    "Bbb": {
+        "up": 3,
+        "down": 9
+    },
     "A": {
         "up": 3,
         "down": -9
@@ -522,6 +526,10 @@ transpose_to_c = {
     "Eb": {
         "up": 9,
         "down": -3
+    },
+    "Ebb": {
+        "up": 10,
+        "down": 2
     },
     "D#": {
         "up": 9,
@@ -575,11 +583,12 @@ chord_label_to_integer_notation = {
 extensions_to_integer_notation = {
     "13": 9,
     "11": 5,
-    "9": 2, 
+    "9": 2,
     "7": 10, # 7 usually refers to dominant 7 (b7)
     "6": 9,
     "5": 7,
     "4": 5,
+    "3": 4,
     "2": 2
 }
 
@@ -588,4 +597,11 @@ unwanted_chord_tones = {
     "minor-seventh": [1, 4, 6, 8, 11],
     "dominant": [],
     "major": [1, 3, 5, 6, 8, 10],
+}
+
+alter_dict = {
+    "-2": "bb",
+    "-1": "b",
+    "0": "",
+    "1": "#",
 }
