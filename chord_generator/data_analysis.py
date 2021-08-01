@@ -2,10 +2,10 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
-from note_name_to_number import note_number_to_name, unwanted_chord_tones, noteMidiDB
+from chord_scraper.utils_dict import note_number_to_name, unwanted_chord_tones, noteMidiDB
 import copy
 
-df = pd.read_csv('training_data_note_vectors.csv')
+df = pd.read_csv('./chord_scraper/dataset/training_data_note_vectors.csv')
 
 print(df.head())
 print(df.dtypes)
