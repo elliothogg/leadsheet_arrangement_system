@@ -1,0 +1,17 @@
+
+
+root,type,extensions,note_numbers,notes
+G,minor-seventh,"[]","[23,26,30,33,52]","[G2,Bb2,D3,F3,C5]"
+C,dominant,"[{'degree':'9','alter':'-1','type':'add'}]","[22,26,28,32,50]","[Gb2,Bb2,C3,E3,Bb4]"
+F,dominant,"[]","[21,25,28,31,49]","[F2,A2,C3,Eb3,A4]"
+C,dominant,"[]","[16,28,38,44,48]","[C2,C3,Bb3,E4,G#4]"
+
+
+
+
+g,type,extensions,note_numbers
+g,minor-seventh,"[]","[16,19,27,26,45]"
+g,dominant,"[{'degree':'9','alter':'-1','type':'add'}]","[22,26,28,32,50]"
+g,dominant,"[]","[16,20,23,26,44]"
+g,dominant,"[{'degree':'5','alter':'1','type':'alter'}]","[16,28,38,44,48]"
+
