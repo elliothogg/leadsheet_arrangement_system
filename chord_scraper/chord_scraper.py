@@ -149,11 +149,14 @@ def chords_pretty_print(chords_in):
         j = j + 1
     
 def remove_invalid_chords():
+    count = 0
     global chords 
     invalid_chords = return_invalid_chords(chords)
     invalid_chords.sort(reverse=True) # reverse the order of the invalid chords indices as need to remove from list in reverse order
     for index in invalid_chords:
         del chords[index]
+        count += 1
+    if (verbose): print("Total number of chords with < 3 notes: ", count, ". Removing now.")
 
 def add_note_numbers():
     global chords 
@@ -414,8 +417,8 @@ def main():
     mine_chords_from_dir(directory)
     flatten_chords()
 
-    if (meta):
-        chords_pretty_print(chords)
+    # if (meta):
+    #     chords_pretty_print(chords)
 
     remove_invalid_chords()
     add_note_numbers()
@@ -431,7 +434,6 @@ def main():
     test_transpose_extreme_octaves()
     write_chords_in_c_data()
 
-    print(chords_in_c)
 
     if (meta):
         gather_chord_type_meta_data()

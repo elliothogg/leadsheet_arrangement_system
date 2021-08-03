@@ -138,8 +138,11 @@ def remove_invalid_chords():
     global chords 
     invalid_chords = return_invalid_chords(chords)
     invalid_chords.sort(reverse=True) # reverse the order of the invalid chords indices as need to remove from list in reverse order
+    count = 0
     for index in invalid_chords:
         del chords[index]
+        count += 1
+    if (verbose): print("Number of chords deleted due to < 3 notes:" + count)
 
 def count_degree_tags(file_name): #checks there is an equal amount of degree-value/alter/type tags
     with open(file_name) as topo_file:

@@ -2,10 +2,24 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import inspect
+import sys
+
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0, parentdir)
+
 from chord_scraper.utils_dict import note_number_to_name, unwanted_chord_tones, noteMidiDB
 import copy
 
-df = pd.read_csv('./chord_scraper/dataset/training_data_note_vectors.csv')
+plt.rcParams['figure.dpi'] = 300
+plt.rcParams['savefig.dpi'] = 300
+sns.set(rc={"figure.dpi":300, 'savefig.dpi':300})
+sns.set_context('notebook')
+sns.set_style("ticks")
+
+df = pd.read_csv('chord_scraper/dataset/training_data_note_vectors.csv')
 
 print(df.head())
 print(df.dtypes)
@@ -16,10 +30,18 @@ print("number of null entries: ", df.isnull().sum())
 value_count=df['label'].value_counts()
 print(value_count)
 
-# plt.figure(figsize=(50,5));
-# sns.countplot(x='label',data = df);
+plt.figure(figsize=(15, 8));
+countplot = sns.countplot(y='label',data = df, orient="h");
+countplot.set_yticklabels(countplot.get_yticklabels(), fontsize=14)
+countplot.set_xticklabels([0,250,500,750,1000,1250,1500,1750,2000], fontsize=14)
+countplot.set_xlabel("", fontsize=16)
+countplot.set_ylabel("", fontsize=16)
 
-# # plt.show()
+# for bar in countplot.patches:
+#     countplot.annotate('{:}'.format(bar.get_height()), (bar.get_x()+0.15, bar.get_height()+1), fontsize=15)
+# plt.show()
+
+
 # plt.savefig("chords_count_unfiltered.png")
 
 
@@ -49,6 +71,7 @@ dominant_chords = df_filtered[(df_filtered.label=="dominant")]
 minor_seventh_chords = df_filtered[(df_filtered.label=="minor-seventh")]
 major_chords = df_filtered[(df_filtered.label=="major")]
 major_seventh_chords = df_filtered[(df_filtered.label=="major-seventh")]
+
 
 
 def create_array_of_column_values(column_name, dataframe):
@@ -151,27 +174,69 @@ def reduce_high_pitch_notes(chord_array):
         chord[g4:87] = 0
     return chord_array_reduced
 
-plot_chords_bar_chart(major_seventh_chords_array, "Major Seventh Chords Uncleaned")
-plot_chords_bar_chart(minor_seventh_chords_array, "Minor Seventh Chords Uncleaned")
-plot_chords_bar_chart(major_chords_array, "Major Chords Uncleaned")
-plot_chords_bar_chart(dominant_chords_array, "Dominant Seventh Chords Uncleaned")
+def count_total_notes_in_chord_type(chord_array):
+    count = 0
+    for chord in chord_array:
+        for note in chord:
+            if note == 1:
+                count +=1
+    return count
 
-major_seventh_chords_array_cleaned = remove_unwanted_chord_tones(major_seventh_chords_array, "major-seventh")
-minor_seventh_chords_array_cleaned = remove_unwanted_chord_tones(minor_seventh_chords_array, "minor-seventh")
-major_chords_array_cleaned = remove_unwanted_chord_tones(major_chords_array, "major")
-dominant_chords_array_cleaned = remove_unwanted_chord_tones(dominant_chords_array, "dominant")
+def count_total_unwanted_notes_in_chord_type(chord_array, label):
+    count = 0
+    for chord in chord_array:
+        for idx, note in enumerate(chord):
+            if chord[idx] == 1 and note_as_integer_notation(idx) in unwanted_chord_tones[label]:
+                count += 1
+    return count
 
-plot_chords_bar_chart(major_seventh_chords_array_cleaned, "Major Seventh Chords Cleaned")
-plot_chords_bar_chart(minor_seventh_chords_array_cleaned, "Minor Seventh Chords Cleaned")
-plot_chords_bar_chart(major_chords_array_cleaned, "Major Chords Cleaned")
-plot_chords_bar_chart(dominant_chords_array_cleaned, "Dominant Seventh Chords Cleaned")
+total_notes_dominant = count_total_notes_in_chord_type(dominant_chords_array)
+unwanted_note_count_dominant = count_total_unwanted_notes_in_chord_type(dominant_chords_array, "dominant")
+total_notes_minor_seventh = count_total_notes_in_chord_type(minor_seventh_chords_array)
+unwanted_note_count_minor_seventh = count_total_unwanted_notes_in_chord_type(minor_seventh_chords_array, "minor-seventh")
+total_notes_major_seventh = count_total_notes_in_chord_type(major_seventh_chords_array)
+unwanted_note_count_major_seventh = count_total_unwanted_notes_in_chord_type(major_seventh_chords_array, "major-seventh")
+total_notes_major = count_total_notes_in_chord_type(major_chords_array)
+unwanted_note_count_major = count_total_unwanted_notes_in_chord_type(major_chords_array, "major")
 
-major_seventh_chords_array_cleaned_reduced = reduce_high_pitch_notes(major_seventh_chords_array_cleaned)
-minor_seventh_chords_array_cleaned_reduced = reduce_high_pitch_notes(minor_seventh_chords_array_cleaned)
-major_chords_array_cleaned_reduced = reduce_high_pitch_notes(major_chords_array_cleaned)
-dominant_chords_array_cleaned_reduced = reduce_high_pitch_notes(dominant_chords_array_cleaned)
+def calculate_margin_of_error(chord_type, total_notes, total_unwanted_notes):
+    accuracy = 0
+    if (total_unwanted_notes == 0): accuracy = 1
+    else:
+        accuracy = 1 - (total_unwanted_notes/total_notes)
+    print("-----------")
+    print(chord_type, ":")
+    print("Total notes:", total_notes)
+    print("Total unwanted notes:", total_unwanted_notes)
+    print("Accuracy:", accuracy)
+    print("-----------")
 
-plot_chords_bar_chart(major_seventh_chords_array_cleaned_reduced, "Major Seventh Chords Cleaned and Reduced")
-plot_chords_bar_chart(minor_seventh_chords_array_cleaned_reduced, "Minor Seventh Chords Cleaned and Reduced")
-plot_chords_bar_chart(major_chords_array_cleaned_reduced, "Major Chords Cleaned and Reduced")
-plot_chords_bar_chart(dominant_chords_array_cleaned_reduced, "Dominant Seventh Chords Cleaned and Reduced")
+calculate_margin_of_error("dominant", total_notes_dominant, unwanted_note_count_dominant)
+calculate_margin_of_error("minor_seventh", total_notes_minor_seventh, unwanted_note_count_minor_seventh)
+calculate_margin_of_error("major_seventh", total_notes_major_seventh, unwanted_note_count_major_seventh)
+calculate_margin_of_error("major", total_notes_major, unwanted_note_count_major)
+
+# plot_chords_bar_chart(major_seventh_chords_array, "Major Seventh Chords Uncleaned")
+# plot_chords_bar_chart(minor_seventh_chords_array, "Minor Seventh Chords Uncleaned")
+# plot_chords_bar_chart(major_chords_array, "Major Chords Uncleaned")
+# plot_chords_bar_chart(dominant_chords_array, "Dominant Seventh Chords Uncleaned")
+
+# major_seventh_chords_array_cleaned = remove_unwanted_chord_tones(major_seventh_chords_array, "major-seventh")
+# minor_seventh_chords_array_cleaned = remove_unwanted_chord_tones(minor_seventh_chords_array, "minor-seventh")
+# major_chords_array_cleaned = remove_unwanted_chord_tones(major_chords_array, "major")
+# dominant_chords_array_cleaned = remove_unwanted_chord_tones(dominant_chords_array, "dominant")
+
+# plot_chords_bar_chart(major_seventh_chords_array_cleaned, "Major Seventh Chords Cleaned")
+# plot_chords_bar_chart(minor_seventh_chords_array_cleaned, "Minor Seventh Chords Cleaned")
+# plot_chords_bar_chart(major_chords_array_cleaned, "Major Chords Cleaned")
+# plot_chords_bar_chart(dominant_chords_array_cleaned, "Dominant Seventh Chords Cleaned")
+
+# major_seventh_chords_array_cleaned_reduced = reduce_high_pitch_notes(major_seventh_chords_array_cleaned)
+# minor_seventh_chords_array_cleaned_reduced = reduce_high_pitch_notes(minor_seventh_chords_array_cleaned)
+# major_chords_array_cleaned_reduced = reduce_high_pitch_notes(major_chords_array_cleaned)
+# dominant_chords_array_cleaned_reduced = reduce_high_pitch_notes(dominant_chords_array_cleaned)
+
+# plot_chords_bar_chart(major_seventh_chords_array_cleaned_reduced, "Major Seventh Chords Cleaned and Reduced")
+# plot_chords_bar_chart(minor_seventh_chords_array_cleaned_reduced, "Minor Seventh Chords Cleaned and Reduced")
+# plot_chords_bar_chart(major_chords_array_cleaned_reduced, "Major Chords Cleaned and Reduced")
+# plot_chords_bar_chart(dominant_chords_array_cleaned_reduced, "Dominant Seventh Chords Cleaned and Reduced")
