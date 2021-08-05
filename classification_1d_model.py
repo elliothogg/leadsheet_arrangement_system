@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 # Networks require the labeled and projected data to be of the same shape.
 
 
-data_pickle_path = 'training_data.pickle'
+data_pickle_path = 'chord_vectors_training_data.pickle'
 
 with open(data_pickle_path, 'rb') as file:
     training_data = pickle.load(file)
@@ -23,12 +23,11 @@ with open(data_pickle_path, 'rb') as file:
 x, y = training_data
 
 
+x_train = x[0:2500]
+x_test = x[2500: 3272]
 
-x_train = x[0:4000]
-x_test = x[4000: 4831]
-
-y_train = y[0:4000]
-y_test = y[4000: 4831]
+y_train = y[0:2500]
+y_test = y[2500: 3272]
 
 print(x_train.shape)
 print(y_train.shape)

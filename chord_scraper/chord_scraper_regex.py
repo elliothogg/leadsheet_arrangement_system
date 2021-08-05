@@ -17,7 +17,7 @@ training_data_2d = ()
 chords_meta_data = {}
 index_of_inverted_chords = []
 deviation = 20 #allows notes either-side of the chord location to be included in the chord (notes next to each other in a chord are usually ofset on the x-axis)
-directory = "./fully_arranged_standards_musicxml" #directory of musicXML files
+directory = "./chord_scraper/fully_arranged_standards_musicxml" #directory of musicXML files
 verbose = False
 
 def set_deviation(deviation_amm):
@@ -106,7 +106,7 @@ def get_chords_meta(file_name):
                     extensions.append(extension)
             if ("<note default-x" in line) and (harmony_found ):
                 chord_x_location = re.search(r"(?<=default-x=\")(.*?)(?=\")", line).group(1)
-                current_songs_chords.append({'root_note': chord_root, 'type': chord_type, 'extensions': extensions, 'notes_x_location': chord_x_location, 'measure': measure, 'notes': []})
+                current_songs_chords.append({'song:': file_name, 'root_note': chord_root, 'type': chord_type, 'extensions': extensions, 'notes_x_location': chord_x_location, 'measure': measure, 'notes': []})
                 harmony_found = False
     print(current_songs_chords)
     get_chord_notes(file_name, current_songs_chords)
@@ -140,8 +140,10 @@ def remove_invalid_chords():
     invalid_chords.sort(reverse=True) # reverse the order of the invalid chords indices as need to remove from list in reverse order
     count = 0
     for index in invalid_chords:
+        print(chords[index])
         del chords[index]
         count += 1
+        print("deleting")
     if (verbose): print("Number of chords deleted due to < 3 notes:" + count)
 
 def count_degree_tags(file_name): #checks there is an equal amount of degree-value/alter/type tags
@@ -234,7 +236,7 @@ def transpose_chords_to_key_c():
     chords_in_c = copy.deepcopy(chords)
     for chord in chords_in_c:
         del chord['notes_x_location']
-        del chord['measure']
+        # del chord['measure']
         del chord['notes'] #remove all keys apart from type, extensions, and note_numbers
         lowest_note = chord['note_numbers'][0]
         root = chord['root_note']
@@ -504,7 +506,7 @@ def main():
     transpose_extreme_octaves()
     test_transpose_extreme_octaves()
     create_chord_label_vectors()
-    
+    chords_pretty_print(chords_in_c)
     write_training_data_csv_note_numbers()
     
     convert_notes_to_88_key_vectors()
@@ -515,6 +517,7 @@ def main():
     # create_1d_training_data()
     # create_2d_training_data()
     # write_training_data()
+
 
     if (verbose):
         gather_chord_type_meta_data()

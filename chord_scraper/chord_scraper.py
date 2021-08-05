@@ -7,6 +7,7 @@ import csv
 import argparse
 import xml.etree.ElementTree as ET
 import pandas
+import pickle
 
 chords = []
 chords_in_c = []
@@ -14,7 +15,7 @@ chords_meta_data = {}
 index_of_inverted_chords = []
 deviation = 20 #allows notes either-side of the chord location to be included in the chord (notes next to each other in a chord are usually ofset on the x-axis)
 directory = "./fully_arranged_standards_musicxml" #directory of musicXML files
-out_dir = "./datasettest/"
+out_dir = "./dataset/"
 verbose = False
 meta = False
 
@@ -270,6 +271,10 @@ def count_num_inverted_chords():
     return count
 
 def write_raw_chords_data():
+    #Write as Pickle
+    with open(out_dir + 'raw_chords.pickle', 'wb') as file:
+        pickle.dump(chords, file)
+    #Write as CSV
     with open(out_dir + 'raw_chords.csv', mode='w') as csv_file:
         fieldnames = ["root", "type", "extensions", "notes", "note_numbers"]
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
@@ -281,6 +286,7 @@ def write_raw_chords_data():
             notes = chord["notes"]
             note_numbers = chord["note_numbers"]
             writer.writerow({"root": root, "type": type, "extensions": extensions, "notes": notes, "note_numbers": note_numbers})
+    
 
 def transpose_chords_to_key_c():
     global chords
@@ -370,19 +376,19 @@ def test_transpose_extreme_octaves(is_user_test=True):
     return True
 
 def write_chords_in_c_data():
+    #Write as Pickle
+    with open(out_dir + 'chords_in_c.pickle', 'wb') as file:
+        pickle.dump(chords_in_c, file)
+    #Write as CSV
     with open(out_dir + 'chords_in_c.csv', mode='w') as csv_file:
-        # fieldnames = ["type", "extensions", "note_numbers"]
-        # writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-        # writer.writeheader()
-        # for chord in chords:
-        #     root = chord["root_note"]
-        #     type = chord["type"]
-        #     extensions = chord["extensions"]
-        #     notes = chord["notes"]
-        #     note_numbers = chord["note_numbers"]
-        #     writer.writerow({"type": type, "extensions": extensions, "note_numbers": note_numbers})
-        wr = csv.writer(csv_file, quoting=csv.QUOTE_ALL)
-        wr.writerow(chords_in_c)
+        fieldnames = ["type", "extensions", "note_numbers"]
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        for chord in chords_in_c:
+            type = chord["type"]
+            extensions = chord["extensions"]
+            note_numbers = chord["note_numbers"]
+            writer.writerow({"type": type, "extensions": extensions, "note_numbers": note_numbers})
 
 def gather_chord_type_meta_data():
     for chord in chords:

@@ -13,14 +13,14 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 from chord_scraper.utils_dict import chord_label_to_integer_notation, extensions_to_integer_notation, noteMidiDB
 
-def load_chords():
-    chords = []
-    with open('../chord_scraper/datasettest/chords_in_c.csv') as f:
-        chords = [{k: v for k, v in row.items()} for row in csv.DictReader(f, skipinitialspace=True)]
-    return chords
+def load_pickle(path):
+    data = None
+    with open(path, 'rb') as file:
+        data =  pickle.load(file)
+    return data
 
-chords_in_c = pd.read_csv('../chord_scraper/datasettest/chords_in_c.csv')
-out_dir = "./training_data"
+chords_in_c = load_pickle("../chord_scraper/dataset/chords_in_c.pickle")
+out_dir = "./training_data/"
 training_data = ()
 training_data_1d = ()
 training_data_2d = ()
@@ -172,15 +172,16 @@ def create_2d_training_data():
 def write_training_data():
     training_data_pickle = pickle.dumps(training_data)
     training_data_2d_pickle = pickle.dumps(training_data_2d)
-    with open('training_data.pickle', 'wb') as file:
+    with open(out_dir + 'training_data.pickle', 'wb') as file:
         pickle.dump(training_data, file)
-    with open('training_data_1d.pickle', 'wb') as file:
+    with open(out_dir + 'training_data_1d.pickle', 'wb') as file:
         pickle.dump(training_data_1d, file)
-    with open('training_data_2d.pickle', 'wb') as file:
+    with open(out_dir + 'training_data_2d.pickle', 'wb') as file:
         pickle.dump(training_data_2d, file)
 
 
 def main():
+    print("Embedding Chord Data...")
     if not os.path.exists(out_dir):
         os.mkdir(out_dir)
 
@@ -190,7 +191,9 @@ def main():
     
     convert_notes_to_88_key_vectors()
     convert_labels_to_numpy_arrays() #use binary number instead
-    
+
+    print("Writing Training Data...")
+
     write_label_note_vectors()
 
     create_training_data()
@@ -198,4 +201,6 @@ def main():
     create_2d_training_data()
     write_training_data()
 
-print(list(chords_in_c))
+    print("Embedding Complete. Find Training Data in " + out_dir)
+
+main()

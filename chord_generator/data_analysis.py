@@ -5,6 +5,7 @@ import numpy as np
 import os
 import inspect
 import sys
+import pickle
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
@@ -13,13 +14,15 @@ sys.path.insert(0, parentdir)
 from chord_scraper.utils_dict import note_number_to_name, unwanted_chord_tones, noteMidiDB
 import copy
 
-plt.rcParams['figure.dpi'] = 300
-plt.rcParams['savefig.dpi'] = 300
-sns.set(rc={"figure.dpi":300, 'savefig.dpi':300})
-sns.set_context('notebook')
-sns.set_style("ticks")
+out_dir = "./chord_generator/data_visualisations/"
 
-df = pd.read_csv('chord_scraper/dataset/training_data_note_vectors.csv')
+# plt.rcParams['figure.dpi'] = 300
+# plt.rcParams['savefig.dpi'] = 300
+# sns.set(rc={"figure.dpi":300, 'savefig.dpi':300})
+# sns.set_context('notebook')
+# sns.set_style("ticks")
+
+df = pd.read_csv('chord_generator/training_data/label_note_vectors.csv')
 
 print(df.head())
 print(df.dtypes)
@@ -30,19 +33,19 @@ print("number of null entries: ", df.isnull().sum())
 value_count=df['label'].value_counts()
 print(value_count)
 
-plt.figure(figsize=(15, 8));
-countplot = sns.countplot(y='label',data = df, orient="h");
-countplot.set_yticklabels(countplot.get_yticklabels(), fontsize=14)
-countplot.set_xticklabels([0,250,500,750,1000,1250,1500,1750,2000], fontsize=14)
-countplot.set_xlabel("", fontsize=16)
-countplot.set_ylabel("", fontsize=16)
+# plt.figure(figsize=(15, 8));
+# countplot = sns.countplot(y='label',data = df, orient="h");
+# countplot.set_yticklabels(countplot.get_yticklabels(), fontsize=14)
+# countplot.set_xticklabels([0,250,500,750,1000,1250,1500,1750,2000], fontsize=14)
+# countplot.set_xlabel("", fontsize=16)
+# countplot.set_ylabel("", fontsize=16)
 
 # for bar in countplot.patches:
 #     countplot.annotate('{:}'.format(bar.get_height()), (bar.get_x()+0.15, bar.get_height()+1), fontsize=15)
 # plt.show()
 
 
-# plt.savefig("chords_count_unfiltered.png")
+# plt.savefig(out_dir + "chords_count_unfiltered.png")
 
 
 # converts notes to np arrays
@@ -146,12 +149,12 @@ def remove_unwanted_chord_tones(chord_array, label):
 def note_as_integer_notation(note):
     return (note + 9) % 12
 
-def plot_chords_bar_chart(chords_array, title):
+def plot_chords_stacked_bar_chart(chords_array, title):
     plt.figure(figsize=(25,10), dpi=400)
     barWidth = 0.7
     cum_size = np.zeros(88)
     for idx, chord in enumerate(chords_array):
-        plt.bar(notes, chords_array[idx], bottom=cum_size, width=barWidth)
+        plt.bar(notes, chords_array[idx], bottom=cum_size, width=barWidth, color="#4eabb7")
         cum_size += chords_array[idx]
     x_ticks = list(note_number_to_name.values())
     x_ticks.reverse()
@@ -162,7 +165,7 @@ def plot_chords_bar_chart(chords_array, title):
     plt.xlabel("Notes")
     plt.ylabel("Occurences")
     plt.title(title)
-    plt.savefig(title.lower().replace(" ", "_") + ".png")
+    plt.savefig(out_dir + title.lower().replace(" ", "_") + ".png")
 
 
 # We do not want to generate chords that will have notes that are higher in pitch than their accompanying melody notes
@@ -216,27 +219,52 @@ calculate_margin_of_error("minor_seventh", total_notes_minor_seventh, unwanted_n
 calculate_margin_of_error("major_seventh", total_notes_major_seventh, unwanted_note_count_major_seventh)
 calculate_margin_of_error("major", total_notes_major, unwanted_note_count_major)
 
-# plot_chords_bar_chart(major_seventh_chords_array, "Major Seventh Chords Uncleaned")
-# plot_chords_bar_chart(minor_seventh_chords_array, "Minor Seventh Chords Uncleaned")
-# plot_chords_bar_chart(major_chords_array, "Major Chords Uncleaned")
-# plot_chords_bar_chart(dominant_chords_array, "Dominant Seventh Chords Uncleaned")
+# plot_chords_stacked_bar_chart(major_seventh_chords_array, "Major Seventh Chords Uncleaned")
+# plot_chords_stacked_bar_chart(minor_seventh_chords_array, "Minor Seventh Chords Uncleaned")
+# plot_chords_stacked_bar_chart(major_chords_array, "Major Chords Uncleaned")
+# plot_chords_stacked_bar_chart(dominant_chords_array, "Dominant Seventh Chords Uncleaned")
 
-# major_seventh_chords_array_cleaned = remove_unwanted_chord_tones(major_seventh_chords_array, "major-seventh")
-# minor_seventh_chords_array_cleaned = remove_unwanted_chord_tones(minor_seventh_chords_array, "minor-seventh")
-# major_chords_array_cleaned = remove_unwanted_chord_tones(major_chords_array, "major")
-# dominant_chords_array_cleaned = remove_unwanted_chord_tones(dominant_chords_array, "dominant")
+major_seventh_chords_array_cleaned = remove_unwanted_chord_tones(major_seventh_chords_array, "major-seventh")
+minor_seventh_chords_array_cleaned = remove_unwanted_chord_tones(minor_seventh_chords_array, "minor-seventh")
+major_chords_array_cleaned = remove_unwanted_chord_tones(major_chords_array, "major")
+dominant_chords_array_cleaned = remove_unwanted_chord_tones(dominant_chords_array, "dominant")
 
-# plot_chords_bar_chart(major_seventh_chords_array_cleaned, "Major Seventh Chords Cleaned")
-# plot_chords_bar_chart(minor_seventh_chords_array_cleaned, "Minor Seventh Chords Cleaned")
-# plot_chords_bar_chart(major_chords_array_cleaned, "Major Chords Cleaned")
-# plot_chords_bar_chart(dominant_chords_array_cleaned, "Dominant Seventh Chords Cleaned")
+# plot_chords_stacked_bar_chart(major_seventh_chords_array_cleaned, "Major Seventh Chords Cleaned")
+# plot_chords_stacked_bar_chart(minor_seventh_chords_array_cleaned, "Minor Seventh Chords Cleaned")
+# plot_chords_stacked_bar_chart(major_chords_array_cleaned, "Major Chords Cleaned")
+# plot_chords_stacked_bar_chart(dominant_chords_array_cleaned, "Dominant Seventh Chords Cleaned")
 
-# major_seventh_chords_array_cleaned_reduced = reduce_high_pitch_notes(major_seventh_chords_array_cleaned)
-# minor_seventh_chords_array_cleaned_reduced = reduce_high_pitch_notes(minor_seventh_chords_array_cleaned)
-# major_chords_array_cleaned_reduced = reduce_high_pitch_notes(major_chords_array_cleaned)
-# dominant_chords_array_cleaned_reduced = reduce_high_pitch_notes(dominant_chords_array_cleaned)
+major_seventh_chords_array_cleaned_reduced = reduce_high_pitch_notes(major_seventh_chords_array_cleaned[0:818])
+minor_seventh_chords_array_cleaned_reduced = reduce_high_pitch_notes(minor_seventh_chords_array_cleaned[0:818])
+major_chords_array_cleaned_reduced = reduce_high_pitch_notes(major_chords_array_cleaned[0:818])
+dominant_chords_array_cleaned_reduced = reduce_high_pitch_notes(dominant_chords_array_cleaned[0:818])
 
-# plot_chords_bar_chart(major_seventh_chords_array_cleaned_reduced, "Major Seventh Chords Cleaned and Reduced")
-# plot_chords_bar_chart(minor_seventh_chords_array_cleaned_reduced, "Minor Seventh Chords Cleaned and Reduced")
-# plot_chords_bar_chart(major_chords_array_cleaned_reduced, "Major Chords Cleaned and Reduced")
-# plot_chords_bar_chart(dominant_chords_array_cleaned_reduced, "Dominant Seventh Chords Cleaned and Reduced")
+# plot_chords_stacked_bar_chart(major_seventh_chords_array_cleaned_reduced, "Major Seventh Chords Cleaned and Reduced")
+# plot_chords_stacked_bar_chart(minor_seventh_chords_array_cleaned_reduced, "Minor Seventh Chords Cleaned and Reduced")
+# plot_chords_stacked_bar_chart(major_chords_array_cleaned_reduced, "Major Chords Cleaned and Reduced")
+# plot_chords_stacked_bar_chart(dominant_chords_array_cleaned_reduced, "Dominant Seventh Chords Cleaned and Reduced")
+
+print(len(major_chords_array_cleaned_reduced))
+print(len(major_seventh_chords_array_cleaned_reduced))
+print(len(minor_seventh_chords_array_cleaned_reduced))
+print(len(dominant_chords_array_cleaned_reduced))
+
+def create_chord_vectors_training_data():
+    labels = []
+    voicings = []
+    for i in range(818):
+        labels.append(1)
+        voicings.append(dominant_chords_array_cleaned_reduced[i])
+        labels.append(2)
+        voicings.append(minor_seventh_chords_array_cleaned_reduced[i])
+        labels.append(3)
+        voicings.append(major_chords_array_cleaned_reduced[i])
+        labels.append(4)
+        voicings.append(major_seventh_chords_array_cleaned_reduced[i])
+    labels_np = np.array(labels)
+    voicings_np = np.array(voicings)
+    training_data = (labels_np, voicings_np)
+    with open('chord_vectors_training_data.pickle', 'wb') as file:
+        pickle.dump(training_data, file)
+
+create_chord_vectors_training_data()
