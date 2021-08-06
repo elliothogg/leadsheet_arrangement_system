@@ -6,6 +6,7 @@ import os
 import inspect
 import sys
 import pickle
+import random
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
@@ -249,22 +250,109 @@ print(len(major_seventh_chords_array_cleaned_reduced))
 print(len(minor_seventh_chords_array_cleaned_reduced))
 print(len(dominant_chords_array_cleaned_reduced))
 
+
+# loop through each chord matrix, and count the number of "major" and "minor" notes
+def count_num_of_major_and_minor_notes(matrix):
+    #sum all 7 octave vectors together
+    summed_octaves = np.sum(matrix, axis=0)
+
+    # notes that are exclusive to major chords = [4,6,11] (integer notation)
+    major_notes_count = summed_octaves[4] + summed_octaves[6] + summed_octaves[11]
+    
+    # notes that are exclusive to minor chords = [3,5,10] (integer notation)
+    minor_notes_count = summed_octaves[3] + summed_octaves[5] + summed_octaves[10]
+
+    
+    if major_notes_count > minor_notes_count:
+        major_notes_count += random.uniform(0.2,2)
+        minor_notes_count -= random.uniform(-0.2,2)
+    elif minor_notes_count > major_notes_count:
+        major_notes_count -= random.uniform(0.2,2)
+        minor_notes_count += random.uniform(-0.2,2)
+    if summed_octaves[4] and summed_octaves [10] == 1:
+        major_notes_count += random.uniform(0,2)
+        minor_notes_count += random.uniform(0,2)
+    return [major_notes_count, minor_notes_count]
+
 def create_chord_vectors_training_data():
     labels = []
     voicings = []
     for i in range(818):
-        labels.append(1)
+        labels.append(0)
         voicings.append(dominant_chords_array_cleaned_reduced[i])
-        labels.append(2)
+        labels.append(1)
         voicings.append(minor_seventh_chords_array_cleaned_reduced[i])
-        labels.append(3)
-        voicings.append(major_chords_array_cleaned_reduced[i])
-        labels.append(4)
+        labels.append(2)
         voicings.append(major_seventh_chords_array_cleaned_reduced[i])
+        # labels.append(3)
+        # voicings.append(major_chords_array_cleaned_reduced[i])
     labels_np = np.array(labels)
     voicings_np = np.array(voicings)
     training_data = (labels_np, voicings_np)
     with open('chord_vectors_training_data.pickle', 'wb') as file:
         pickle.dump(training_data, file)
 
+
+def create_scatter_plot_chord_clusters():
+    dominant_notes_type_count = [[], []]
+    minor_seventh_notes_type_count = [[], []]
+    major_notes_type_count = [[], []]
+    major_seventh_notes_type_count = [[], []]
+
+    for i in range(len(dominant_chords_array_cleaned_reduced)):
+        dom_maj, dom_min = count_num_of_major_and_minor_notes(convert_chord_vector_to_matrix(dominant_chords_array_cleaned_reduced[i]))
+        dominant_notes_type_count[0].append(dom_maj)
+        dominant_notes_type_count[1].append(dom_min)
+        min_7_maj, min_7_min = count_num_of_major_and_minor_notes(convert_chord_vector_to_matrix(minor_seventh_chords_array_cleaned_reduced[i]))
+        minor_seventh_notes_type_count[0].append(min_7_maj)
+        minor_seventh_notes_type_count[1].append(min_7_min)
+        maj_maj, maj_min = count_num_of_major_and_minor_notes(convert_chord_vector_to_matrix(major_chords_array_cleaned_reduced[i]))
+        major_notes_type_count[0].append(maj_maj)
+        major_notes_type_count[1].append(maj_min)
+        maj_7_maj, maj_7_min = count_num_of_major_and_minor_notes(convert_chord_vector_to_matrix(major_seventh_chords_array_cleaned_reduced[i]))
+        major_seventh_notes_type_count[0].append(maj_7_maj)
+        major_seventh_notes_type_count[1].append(maj_7_min)
+
+    plt.scatter(dominant_notes_type_count[0], dominant_notes_type_count[1], color="brown", s=2)
+    plt.scatter(minor_seventh_notes_type_count[0], minor_seventh_notes_type_count[1], color="green", s=2)
+    plt.scatter(major_notes_type_count[0], major_notes_type_count[1], color="red", s=2)
+    plt.scatter(major_seventh_notes_type_count[0], major_seventh_notes_type_count[1], color="blue", s=2)
+    plt.tick_params(axis='x', which='both', bottom=False,top=False,labelbottom=False)
+    plt.tick_params(axis='y', which='both', left=False,labelleft=False)
+    plt.xlabel("Major Notes")
+    plt.ylabel("Minor Notes")
+    plt.legend(["dominant", "minor-seventh", "major", "major-seventh"])
+    plt.show()
+
+def create_chord_matrices_training_data():
+    labels = []
+    voicings = []
+    for i in range(818):
+        labels.append(0)
+        voicings.append(convert_chord_vector_to_matrix(dominant_chords_array_cleaned_reduced[i]))
+        labels.append(1)
+        voicings.append(convert_chord_vector_to_matrix(minor_seventh_chords_array_cleaned_reduced[i]))
+        labels.append(2)
+        voicings.append(convert_chord_vector_to_matrix(major_seventh_chords_array_cleaned_reduced[i]))
+        # labels.append(2)
+        # voicings.append(convert_chord_vector_to_matrix(major_chords_array_cleaned_reduced[i]))
+    labels_np = np.array(labels)
+    voicings_np = np.array(voicings)
+    training_data = (labels_np, voicings_np)
+    with open('chord_matrices_training_data.pickle', 'wb') as file:
+        pickle.dump(training_data, file)
+
+def convert_chord_vector_to_matrix(vector):
+    clipped_vector = np.array(copy.deepcopy(vector[3:87]))
+    matrix = np.reshape(clipped_vector, (7, 12))
+    return matrix
+    
+
+
+
 create_chord_vectors_training_data()
+# create_chord_matrices_training_data()
+
+
+
+create_scatter_plot_chord_clusters()
