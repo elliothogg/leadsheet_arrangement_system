@@ -21,7 +21,7 @@ from matplotlib import pyplot
 
 
 def load_data():
-    data_pickle_path = 'chord_matrices_training_data.pickle'
+    data_pickle_path = '../chord_matrices_training_data.pickle'
     with open(data_pickle_path, 'rb') as file:
         training_data = pickle.load(file)
     t_d = reshape_12_x_12(training_data)
