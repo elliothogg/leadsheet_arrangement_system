@@ -18,14 +18,15 @@ from tensorflow.keras.layers import Embedding
 from tensorflow.keras.layers import Concatenate
 import numpy as np
 from matplotlib import pyplot
-
+import tensorflow as tf
 
 def load_data():
     data_pickle_path = '../chord_matrices_training_data.pickle'
     with open(data_pickle_path, 'rb') as file:
         training_data = pickle.load(file)
-    t_d = reshape_12_x_12(training_data)
-    return t_d
+    t_1 = reshape_3_x_12(training_data)
+    # t_2 = replace_0_with_minus_1(t_1)
+    return t_1
 
 def reshape_12_x_12(data):
     y, x = data
@@ -37,8 +38,24 @@ def reshape_12_x_12(data):
     x_reshaped = np.array(x_reshaped)
     return (y, x_reshaped)
 
+def reshape_3_x_12(data):
+    y, x = data
+    x_reshaped = []
+    for voicing in x:
+        reshape = voicing.copy()
+        reshape = reshape[1:4]
+        x_reshaped.append(reshape)
+    x_reshaped = np.array(x_reshaped)
+    return (y, x_reshaped)
+
+def replace_0_with_minus_1(data):
+    y, x = data
+    replaced = x.copy()
+    replaced = np.where(replaced == 0, -1, replaced)
+    return (y, replaced)
+
 # define the standalone discriminator model
-def define_discriminator(in_shape=(12,12,1), n_classes=3):
+def define_discriminator(in_shape=(3,12,1), n_classes=3):
     # label input
     in_label = Input(shape=(1,))
     # embedding for categorical input
@@ -78,24 +95,21 @@ def define_generator(latent_dim, n_classes=3):
     # embedding for categorical input
     li = Embedding(n_classes, 50)(in_label)
     # linear multiplication
-    n_nodes = 3 * 3
+    n_nodes = 1 * 3
     li = Dense(n_nodes)(li)
-    # reshape to additional channel
-    li = Reshape((3, 3, 1))(li)
+    # # reshape to additional channel
+    li = Reshape((1, 3, 1))(li)
     # image generator input
     in_lat = Input(shape=(latent_dim,))
     # foundation for 3x3 image
-    n_nodes = 128 * 3 * 3
+    n_nodes = 128 * 1 * 3
     gen = Dense(n_nodes)(in_lat)
     gen = LeakyReLU(alpha=0.2)(gen)
-    gen = Reshape((3, 3, 128))(gen)
+    gen = Reshape((1, 3, 128))(gen)
     # merge image gen and label input
     merge = Concatenate()([gen, li])
-    # upsample to 6x6
-    gen = Conv2DTranspose(128, (4,4), strides=(2,2), padding='same')(merge)
-    gen = LeakyReLU(alpha=0.2)(gen)
-    # upsample to 12x12
-    gen = Conv2DTranspose(128, (4,4), strides=(2,2), padding='same')(gen)
+    # upsample to 3x12
+    gen = Conv2DTranspose(128, (4,4), strides=(3,4), padding='same')(merge)
     gen = LeakyReLU(alpha=0.2)(gen)
     # output
     out_layer = Conv2D(1, (7,7), activation='tanh', padding='same')(gen)
@@ -170,16 +184,16 @@ def plot_history(d1_hist, d2_hist, g_hist, a1_hist, a2_hist):
     pyplot.plot(g_hist, label='gen')
     pyplot.legend()
     # plot discriminator accuracy
-    pyplot.subplot(2, 1, 2)
-    pyplot.plot(a1_hist, label='acc-real')
-    pyplot.plot(a2_hist, label='acc-fake')
-    pyplot.legend()
+    # pyplot.subplot(2, 1, 2)
+    # pyplot.plot(a1_hist, label='acc-real')
+    # pyplot.plot(a2_hist, label='acc-fake')
+    # pyplot.legend()
     # save plot to file
     pyplot.savefig('plot_line_plot_loss.png')
     pyplot.close()
 
 # train the generator and discriminator
-def train(g_model, d_model, gan_model, dataset, latent_dim, n_epochs=300, n_batch=128):
+def train(g_model, d_model, gan_model, dataset, latent_dim, n_epochs=100, n_batch=128):
     bat_per_epo = int(dataset[0].shape[0] / n_batch)
     half_batch = int(n_batch / 2)
     # prepare lists for storing stats each iteration
@@ -209,8 +223,8 @@ def train(g_model, d_model, gan_model, dataset, latent_dim, n_epochs=300, n_batc
             d1_hist.append(d_loss1)
             d2_hist.append(d_loss2)
             g_hist.append(g_loss)
-            a1_hist.append(d_acc1)
-            a2_hist.append(d_acc2)
+            # a1_hist.append(d_acc1)
+            # a2_hist.append(d_acc2)
     plot_history(d1_hist, d2_hist, g_hist, a1_hist, a2_hist)
     # save the generator model
     g_model.save('cgan_generator.h5')
@@ -221,12 +235,15 @@ latent_dim = 100
 # create the discriminator
 d_model = define_discriminator()
 d_model.summary()
+tf.keras.utils.plot_model(d_model, "d_model.png", show_shapes=True, show_layer_names=True)
 # create the generator
 g_model = define_generator(latent_dim)
 g_model.summary()
+tf.keras.utils.plot_model(g_model, "c_gan_model.png", show_shapes=True, show_layer_names=True)
 # create the gan
 gan_model = define_gan(g_model, d_model)
 # load image data
 dataset = load_real_samples()
+
 # train model
 train(g_model, d_model, gan_model, dataset, latent_dim)
