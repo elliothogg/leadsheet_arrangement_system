@@ -13,6 +13,7 @@ import os
 import inspect
 import sys
 
+
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
@@ -67,16 +68,16 @@ def chord_generator(source_chords):
 
 
 
-def generate_chords():
+def generate_chords(model=c_gan_model):
     dominant_label = 0
     min_7_label = 1
     maj_7_label = 2
     latent_points, labels = generate_latent_points(100, dominant_label)
-    dominant_chords = chord_vectors_to_note_numbers(c_gan_model.predict([latent_points, labels]))
+    dominant_chords = chord_vectors_to_note_numbers(model.predict([latent_points, labels]))
     latent_points, labels = generate_latent_points(100, min_7_label)
-    min_7_chords = chord_vectors_to_note_numbers(c_gan_model.predict([latent_points, labels]))
+    min_7_chords = chord_vectors_to_note_numbers(model.predict([latent_points, labels]))
     latent_points, labels = generate_latent_points(100, maj_7_label)
-    maj_7_chords = chord_vectors_to_note_numbers(c_gan_model.predict([latent_points, labels]))
+    maj_7_chords = chord_vectors_to_note_numbers(model.predict([latent_points, labels]))
     return (dominant_chords, min_7_chords, maj_7_chords)
 
 # takes a note in its vector representation (integer between 1-88)
@@ -94,25 +95,22 @@ def calculate_accuracy(chords, invalid_notes):
                 break
     return 1 - (invalid_count / total_count) 
 
-def calculate_uniqueness_percent(chords):
+def calculate_uniqueness(chords):
     total = len(chords)
     num_of_unique = len(set(map(tuple, chords)))
-    print(total, num_of_unique)
-    return (num_of_unique / total) * 100
+    return (num_of_unique / total)
 
 def test_generated_chords(chords):
     dominant_chords, min_7_chords, maj_7_chords = chords
     dom_acc = calculate_accuracy(dominant_chords, unwanted_chord_tones['dominant']) 
     min_7_acc = calculate_accuracy(min_7_chords, unwanted_chord_tones['minor-seventh']) 
     maj_7_acc = calculate_accuracy(maj_7_chords, unwanted_chord_tones['major-seventh']) 
-    print("--ACCURACY--")
-    print("dominant: ", dom_acc)
-    print("minor_seventh: ", min_7_acc)
-    print("major_seventh: ", maj_7_acc)
-    print("--UNIQUE CHORDS--")
-    print("dominant: ", calculate_uniqueness_percent(dominant_chords))
-    print("minor_seventh: ", calculate_uniqueness_percent(min_7_chords))
-    print("major_seventh: ", calculate_uniqueness_percent(maj_7_chords))
+    dom_uniq = calculate_uniqueness(dominant_chords)
+    min_7_uniq = calculate_uniqueness(min_7_chords)
+    maj_7_uniq = calculate_uniqueness(maj_7_chords)
+    print('accuracy: dominant=%.2f, minor_seventh=%.2f, major_seventh=%.2f' % (dom_acc, min_7_acc, maj_7_acc))
+    print('uniqueness: dominant=%.2f, minor_seventh=%.2f, major_seventh=%.2f' % (dom_uniq, min_7_uniq, maj_7_uniq))
+    return dom_acc, min_7_acc, maj_7_acc, dom_uniq, min_7_uniq, maj_7_uniq
 
 
 def print_chords_note_names(chords):
@@ -128,6 +126,6 @@ def print_chords_note_names(chords):
 chords = generate_chords()
 
 test_generated_chords(chords)
-print_chords_note_names(chords[2])
+# print_chords_note_names(chords[2])
 
 

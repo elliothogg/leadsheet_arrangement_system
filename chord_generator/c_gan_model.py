@@ -19,6 +19,15 @@ from tensorflow.keras.layers import Concatenate
 import numpy as np
 from matplotlib import pyplot
 import tensorflow as tf
+import sys
+import os
+import inspect
+
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0, parentdir)
+
+from leadsheet_arranger.chord_generator import generate_chords, test_generated_chords
 
 def load_data():
     data_pickle_path = '../chord_matrices_training_data.pickle'
@@ -192,12 +201,37 @@ def plot_history(d1_hist, d2_hist, g_hist, a1_hist, a2_hist):
     pyplot.savefig('plot_line_plot_loss.png')
     pyplot.close()
 
+def plot_chord_metrics_history(accuracy, uniqueness):
+    dom_acc, min_7_acc, maj_7_acc = accuracy
+    dom_uniq, min_7_uniq, maj_7_uniq = uniqueness
+    # plot chord accuracy
+    pyplot.subplot(2, 1, 1)
+    pyplot.plot(dom_acc, label='dominant')
+    pyplot.plot(min_7_acc, label='minor-seventh')
+    pyplot.plot(maj_7_acc, label='major-seventh')
+    pyplot.legend()
+    pyplot.ylabel("Accuracy")
+    # plot chord uniqueness
+    pyplot.subplot(2, 1, 2)
+    pyplot.plot(dom_uniq, label='dominant')
+    pyplot.plot(min_7_uniq, label='minor-seventh')
+    pyplot.plot(maj_7_uniq, label='major-seventh')
+    pyplot.legend()
+    pyplot.ylabel("Uniqueness")
+    pyplot.xlabel("Epochs")
+    # save plot to file
+    pyplot.savefig('chord_metrics_plot.png')
+    pyplot.close()
+
 # train the generator and discriminator
-def train(g_model, d_model, gan_model, dataset, latent_dim, n_epochs=100, n_batch=128):
+def train(g_model, d_model, gan_model, dataset, latent_dim, n_epochs=1, n_batch=128):
     bat_per_epo = int(dataset[0].shape[0] / n_batch)
     half_batch = int(n_batch / 2)
-    # prepare lists for storing stats each iteration
+    # lists for storing model metrics
     d1_hist, d2_hist, g_hist, a1_hist, a2_hist = list(), list(), list(), list(), list()
+    # list for storing generated chord metrics
+    chords_acc = [[],[],[]]
+    chords_uniq = [[],[],[]]
     # manually enumerate epochs
     for i in range(n_epochs):
         # enumerate batches over the training set
@@ -225,9 +259,13 @@ def train(g_model, d_model, gan_model, dataset, latent_dim, n_epochs=100, n_batc
             g_hist.append(g_loss)
             # a1_hist.append(d_acc1)
             # a2_hist.append(d_acc2)
+        dom_acc, min_7_acc, maj_7_acc, dom_uniq, min_7_uniq, maj_7_uniq = test_generated_chords(generate_chords(g_model))
+        chords_acc[0].append(dom_acc); chords_acc[1].append(min_7_acc); chords_acc[2].append(maj_7_acc)
+        chords_uniq[0].append(dom_uniq); chords_uniq[1].append(min_7_uniq); chords_uniq[2].append(maj_7_uniq)
     plot_history(d1_hist, d2_hist, g_hist, a1_hist, a2_hist)
+    plot_chord_metrics_history(chords_acc, chords_uniq)
     # save the generator model
-    g_model.save('cgan_generator.h5')
+    # g_model.save('cgan_generator.h5')
 
 
 # size of the latent space
