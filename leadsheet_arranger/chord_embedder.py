@@ -8,7 +8,7 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 
-from note_name_to_number import noteMidiDB, chord_label_to_integer_notation, extensions_to_integer_notation
+from chord_scraper.utils_dict import noteMidiDB, chord_label_to_integer_notation, extensions_to_integer_notation
 
 
 def chords_to_array(leadsheet_data):
@@ -17,6 +17,12 @@ def chords_to_array(leadsheet_data):
         for chord in bar['chords']:
             chords.append(chord)
     return chords
+
+def extract_chord_labels(chords):
+    chord_labels = []
+    for chord in chords:
+        chord_labels.append(chord['kind'])
+    return chord_labels
 
 # We ignore the root of the chord, as we are only concerned with the type. We will transpose chords back to their roots when creating arrangement
 def convert_chords_to_integer_notation(chords):
@@ -57,10 +63,6 @@ def embed_chords_88_vectors(chords):
 
 def embed_chords(leadsheet_data):
     chords = chords_to_array(leadsheet_data)
-    chords_int = convert_chords_to_integer_notation(chords)
+    chord_labels = extract_chord_labels(chords)
 
-    chords_int_ext = add_extensions_to_chord_integer_notation(chords_int)
-
-    embedded_chords = embed_chords_88_vectors(chords_int_ext)
-
-    return embedded_chords
+    return chord_labels

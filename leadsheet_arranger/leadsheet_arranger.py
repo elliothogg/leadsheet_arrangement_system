@@ -15,31 +15,21 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 
-from note_name_to_number import noteMidiDB, chord_label_to_integer_notation, extensions_to_integer_notation, key_sig_table, note_number_to_xml_flat, note_number_to_xml_sharp
+from chord_scraper.utils_dict import noteMidiDB, chord_label_to_integer_notation, extensions_to_integer_notation, key_sig_table, note_number_to_xml_flat, note_number_to_xml_sharp
 
 
 
-file_path = "leadsheet_arranger/Baltimore_Oriole.musicxml"
 
- # convert xml file to element tree
-tree = ET.parse(file_path)
-root = tree.getroot()
-
-leadsheet_data = extract_leadsheet_data(root)
-
-embedded_chords = embed_chords(leadsheet_data)
-
-# all chords are generated with C as the root, so need transposing
-generated_chords = chord_generator(embedded_chords)
 
 
 def mock_generated_chords():
     mock_chords = []
-    length = len(generated_chords)
+    length = 56
     i = 0
     while i < length:
         mock_chords.append([40, 44, 47, 51])
         i = i + 1
+    print(mock_chords)
     return mock_chords
 
 
@@ -62,11 +52,13 @@ def create_full_arrangement_data(generated_chords):
 
 # as all generated chords are rooted in C, we need to transpose them back to their original root
 def transpose_chord_notes(notes, root):
+    if (len(notes) == 0): return
     # all chords will get transposed down 
     C4 = noteMidiDB['C4']
     root = noteMidiDB[root + "3"]
     amount = C4 - root
     for idx, note in enumerate(notes):
+        print(notes[idx], amount)
         notes[idx] = notes[idx] - amount
 
 def add_bass_clef(xml_tree):
@@ -77,9 +69,6 @@ def add_bass_clef(xml_tree):
     treble_clef_index = get_treble_clef_element_index(attributes, treble_clef)
     attributes.insert(treble_clef_index + 1, bass_clef) # insert bass clef element after treble clef element
     attributes.insert(treble_clef_index - 1, ET.XML("<staves>2</staves>")) # insert stave element indicating there are 2 clefs
-
-
-mock_chords = mock_generated_chords()
 
 def get_treble_clef_element_index(attri_ele, treble_ele):
     i = 0
@@ -180,11 +169,31 @@ def get_note_length(divisions, time_sig, num_chords_bar):
 
     return [note_type, dotted, duration]
 
-full_arrangement_data = create_full_arrangement_data(mock_chords)
 
 
+file_path = "../leadsheet_arranger/Baltimore_Oriole.musicxml"
+
+ # convert xml file to element tree
+tree = ET.parse(file_path)
+root = tree.getroot()
+
+leadsheet_data = extract_leadsheet_data(root)
+
+chord_labels = embed_chords(leadsheet_data)
+
+# all chords are generated with C as the root, so need transposing
+generated_chords = chord_generator(chord_labels)
+# mock_chords = mock_generated_chords()
+print(generated_chords)
+
+full_arrangement_data = create_full_arrangement_data(generated_chords)
+
+path = "./arranged_pieces/"
+out_name = file_path.split("/")
+out_name = out_name[len(out_name)-1]
 add_bass_clef(root)
 insert_chords_to_arrangement(full_arrangement_data, root)
-tree.write("test.musicxml", encoding="UTF-8", xml_declaration=True)
+tree.write(path + out_name, encoding="UTF-8", xml_declaration=True)
+print("Lead sheet has been sucesfully arranged. Please find it here: " + path + out_name)
 
 

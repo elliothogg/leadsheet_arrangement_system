@@ -12,13 +12,24 @@ import tensorflow as tf
 import os
 import inspect
 import sys
-
+import random
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 
 from chord_scraper.utils_dict import noteMidiDB, chord_label_to_integer_notation, extensions_to_integer_notation, note_number_to_name, unwanted_chord_tones
+
+#contains all valid chord types + does some converting to similar types to enable max capacity
+chord_types_dict = {
+    "dominant": "dominant",
+    "dominant-ninth": "dominant",
+    "minor-seventh": "minor-seventh",
+    "minor": "minor-seventh",
+    "minor-sixth": "minor-seventh",
+    "major": "major-seventh",
+    "major-seventh": "major-seventh"
+}
 
 #prevents scientific number notation
 np.set_printoptions(suppress=True)
@@ -61,22 +72,46 @@ def chord_vectors_to_note_numbers(chords):
     return chords_as_numbers
 
 
-def chord_generator(source_chords):
-    generated_chords = generate_chords(source_chords)
-    numbered_chords = chord_vectors_to_note_numbers(generated_chords)
-    return numbered_chords
+def chord_generator(leadsheet_chord_labels):
+    #generate 50 of each chord to be selected
+    chords = generate_chords()
+    leadsheet_chords = assign_chords(leadsheet_chord_labels, chords)
+    return leadsheet_chords
+
+def assign_chords(leadsheet_chord_labels, chords):
+    dominant_chords, min_7_chords, maj_7_chords = chords
+    leadsheet_chords = []
+    for chord_label in leadsheet_chord_labels:
+        valid_label = validate_chord_label(chord_label)
+        if(valid_label == False):
+            leadsheet_chords.append([])
+            print("error - ", chord_label, "not yet supported :(. Please manually arrange this chord")
+        elif (valid_label == "dominant"):
+            leadsheet_chords.append(random.choice(dominant_chords))
+        elif (valid_label == "minor-seventh"):
+            leadsheet_chords.append(random.choice(min_7_chords))
+        elif (valid_label == "major-seventh"):
+            leadsheet_chords.append(random.choice(maj_7_chords))
+    return leadsheet_chords
 
 
+# checks each chord label to see if generator can generate it
+# currently supported chord types: dominant, minor-seventh, major-seventh AND ~ major + minor (using 7ths)
+def validate_chord_label(chord_label):
+    try:
+        return chord_types_dict[chord_label]
+    except:
+        return False
 
 def generate_chords(model=c_gan_model):
     dominant_label = 0
     min_7_label = 1
     maj_7_label = 2
-    latent_points, labels = generate_latent_points(100, dominant_label)
+    latent_points, labels = generate_latent_points(50, dominant_label)
     dominant_chords = chord_vectors_to_note_numbers(model.predict([latent_points, labels]))
-    latent_points, labels = generate_latent_points(100, min_7_label)
+    latent_points, labels = generate_latent_points(50, min_7_label)
     min_7_chords = chord_vectors_to_note_numbers(model.predict([latent_points, labels]))
-    latent_points, labels = generate_latent_points(100, maj_7_label)
+    latent_points, labels = generate_latent_points(50, maj_7_label)
     maj_7_chords = chord_vectors_to_note_numbers(model.predict([latent_points, labels]))
     return (dominant_chords, min_7_chords, maj_7_chords)
 
