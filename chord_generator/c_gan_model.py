@@ -6,16 +6,8 @@ from numpy.random import randn
 from numpy.random import randint
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import Reshape
-from tensorflow.keras.layers import Flatten
-from tensorflow.keras.layers import Conv2D
-from tensorflow.keras.layers import Conv2DTranspose
-from tensorflow.keras.layers import LeakyReLU
-from tensorflow.keras.layers import Dropout
-from tensorflow.keras.layers import Embedding
-from tensorflow.keras.layers import Concatenate
+from tensorflow.keras.layers import Input, Dense, Reshape, Flatten, Conv2D, Conv2DTranspose, LeakyReLU, Dropout
+from tensorflow.keras.layers import Embedding, Concatenate, MaxPooling2D
 import numpy as np
 from matplotlib import pyplot
 import tensorflow as tf
@@ -192,12 +184,6 @@ def plot_history(d1_hist, d2_hist, g_hist, a1_hist, a2_hist):
     pyplot.plot(d2_hist, label='d-fake')
     pyplot.plot(g_hist, label='gen')
     pyplot.legend()
-    # plot discriminator accuracy
-    # pyplot.subplot(2, 1, 2)
-    # pyplot.plot(a1_hist, label='acc-real')
-    # pyplot.plot(a2_hist, label='acc-fake')
-    # pyplot.legend()
-    # save plot to file
     pyplot.savefig('plot_line_plot_loss.png')
     pyplot.close()
 
@@ -224,7 +210,7 @@ def plot_chord_metrics_history(accuracy, uniqueness):
     pyplot.close()
 
 # train the generator and discriminator
-def train(g_model, d_model, gan_model, dataset, latent_dim, n_epochs=1, n_batch=128):
+def train(g_model, d_model, gan_model, dataset, latent_dim, n_epochs=250, n_batch=128):
     bat_per_epo = int(dataset[0].shape[0] / n_batch)
     half_batch = int(n_batch / 2)
     # lists for storing model metrics
@@ -254,18 +240,16 @@ def train(g_model, d_model, gan_model, dataset, latent_dim, n_epochs=1, n_batch=
             print('>%d, %d/%d, d1=%.3f, d2=%.3f g=%.3f' %
                 (i+1, j+1, bat_per_epo, d_loss1, d_loss2, g_loss))
             # record history
-            d1_hist.append(d_loss1)
-            d2_hist.append(d_loss2)
-            g_hist.append(g_loss)
-            # a1_hist.append(d_acc1)
-            # a2_hist.append(d_acc2)
+        d1_hist.append(d_loss1)
+        d2_hist.append(d_loss2)
+        g_hist.append(g_loss)
         dom_acc, min_7_acc, maj_7_acc, dom_uniq, min_7_uniq, maj_7_uniq = test_generated_chords(generate_chords(g_model))
         chords_acc[0].append(dom_acc); chords_acc[1].append(min_7_acc); chords_acc[2].append(maj_7_acc)
         chords_uniq[0].append(dom_uniq); chords_uniq[1].append(min_7_uniq); chords_uniq[2].append(maj_7_uniq)
-    plot_history(d1_hist, d2_hist, g_hist, a1_hist, a2_hist)
-    plot_chord_metrics_history(chords_acc, chords_uniq)
+    # plot_history(d1_hist, d2_hist, g_hist, a1_hist, a2_hist)
+    # plot_chord_metrics_history(chords_acc, chords_uniq)
     # save the generator model
-    # g_model.save('cgan_generator.h5')
+    # g_model.save('generator.h5')
 
 
 # size of the latent space

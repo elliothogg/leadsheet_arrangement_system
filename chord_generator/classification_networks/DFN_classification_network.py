@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 
-data_pickle_path = 'chord_vectors_training_data.pickle'
+data_pickle_path = '../../chord_vectors_training_data.pickle'
 
 with open(data_pickle_path, 'rb') as file:
     training_data = pickle.load(file)
@@ -25,7 +25,7 @@ model = tf.keras.Sequential([
 ])
 
 model.compile(optimizer='adam', loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), metrics=['accuracy'])
-history = model.fit(x, y, validation_split=0.33, epochs=45, batch_size=1028)
+history = model.fit(x, y, validation_split=0.33, epochs=300, batch_size=1028)
 # tf.keras.utils.plot_model(model, "deep_feedforward_network.png", show_shapes=True, show_layer_names=True)
 # model.summary()
 
