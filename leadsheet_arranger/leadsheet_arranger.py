@@ -1,7 +1,7 @@
 # main file for running arranger
 # this uses pretrained model, to retrain model, see *package*
 
-from chord_symbol_extractor import extract_leadsheet_data
+from data_extractor import extract_leadsheet_data
 from chord_embedder import embed_chords
 from chord_generator import chord_generator
 import copy
@@ -17,19 +17,13 @@ sys.path.insert(0, parentdir)
 
 from chord_scraper.utils_dict import noteMidiDB, chord_label_to_integer_notation, extensions_to_integer_notation, key_sig_table, note_number_to_xml_flat, note_number_to_xml_sharp
 
-
-
-
-
-
 def mock_generated_chords():
     mock_chords = []
     length = 56
     i = 0
     while i < length:
-        mock_chords.append([40, 44, 47, 51])
+        mock_chords.append([28, 44, 47, 51])
         i = i + 1
-    print(mock_chords)
     return mock_chords
 
 
@@ -45,20 +39,17 @@ def create_full_arrangement_data(generated_chords):
             transpose_chord_notes(chord['notes'], chord['root'])
             convert_note_nums_to_notes(chord['notes'], full_arrangement_data['key'])
             chord['xml'] = create_xml_bass_clef_chords(chord['notes'], full_arrangement_data['time'], full_arrangement_data['divisions'], num_of_chords_in_bar)
-
     if (len(gen_chords_copy) != 0):
         raise ValueError('Num of generated chords is not equal to number of chords in leadsheet')
     return full_arrangement_data
 
 # as all generated chords are rooted in C, we need to transpose them back to their original root
 def transpose_chord_notes(notes, root):
-    if (len(notes) == 0): return
     # all chords will get transposed down 
     C4 = noteMidiDB['C4']
     root = noteMidiDB[root + "3"]
     amount = C4 - root
     for idx, note in enumerate(notes):
-        print(notes[idx], amount)
         notes[idx] = notes[idx] - amount
 
 def add_bass_clef(xml_tree):
@@ -184,9 +175,10 @@ chord_labels = embed_chords(leadsheet_data)
 # all chords are generated with C as the root, so need transposing
 generated_chords = chord_generator(chord_labels)
 # mock_chords = mock_generated_chords()
-print(generated_chords)
 
 full_arrangement_data = create_full_arrangement_data(generated_chords)
+
+
 
 path = "./arranged_pieces/"
 out_name = file_path.split("/")

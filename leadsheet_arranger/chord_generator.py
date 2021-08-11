@@ -13,6 +13,7 @@ import os
 import inspect
 import sys
 import random
+import copy
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
@@ -84,14 +85,14 @@ def assign_chords(leadsheet_chord_labels, chords):
     for chord_label in leadsheet_chord_labels:
         valid_label = validate_chord_label(chord_label)
         if(valid_label == False):
-            leadsheet_chords.append([])
+            leadsheet_chords.append([28,40])
             print("error - ", chord_label, "not yet supported :(. Please manually arrange this chord")
         elif (valid_label == "dominant"):
-            leadsheet_chords.append(random.choice(dominant_chords))
+            leadsheet_chords.append(random.choice(dominant_chords).copy())
         elif (valid_label == "minor-seventh"):
-            leadsheet_chords.append(random.choice(min_7_chords))
+            leadsheet_chords.append(random.choice(min_7_chords).copy())
         elif (valid_label == "major-seventh"):
-            leadsheet_chords.append(random.choice(maj_7_chords))
+            leadsheet_chords.append(random.choice(maj_7_chords).copy())
     return leadsheet_chords
 
 
