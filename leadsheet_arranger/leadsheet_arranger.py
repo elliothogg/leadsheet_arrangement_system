@@ -9,13 +9,18 @@ import os
 import inspect
 import sys
 import xml.etree.ElementTree as ET
-
+import argparse
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 
 from chord_scraper.utils_dict import noteMidiDB, chord_label_to_integer_notation, extensions_to_integer_notation, key_sig_table, note_number_to_xml_flat, note_number_to_xml_sharp
+
+
+in_dir = "./leadsheets/"
+out_dir = "./arranged_pieces/"
+verbose = False
 
 def mock_generated_chords():
     mock_chords = []
@@ -28,7 +33,7 @@ def mock_generated_chords():
 
 
 # combine generated chords with leadsheet data to create full arrangement data
-def create_full_arrangement_data(generated_chords):
+def create_full_arrangement_data(generated_chords, leadsheet_data):
     gen_chords_copy = copy.deepcopy(generated_chords)
     full_arrangement_data = copy.deepcopy(leadsheet_data)
     for bar in full_arrangement_data['bars']:
@@ -45,12 +50,14 @@ def create_full_arrangement_data(generated_chords):
 
 # as all generated chords are rooted in C, we need to transpose them back to their original root
 def transpose_chord_notes(notes, root):
-    # all chords will get transposed down 
+    # all chords will get transposed down apart from chords with root of C3
     C4 = noteMidiDB['C4']
     root = noteMidiDB[root + "3"]
     amount = C4 - root
+    if (root == noteMidiDB['C3']): return
     for idx, note in enumerate(notes):
         notes[idx] = notes[idx] - amount
+
 
 def add_bass_clef(xml_tree):
     attributes = xml_tree.find('part').find('measure').find('attributes')
@@ -121,9 +128,11 @@ def insert_chords_to_arrangement(arrangement_data, arrangement_xml_root):
         xml_bars[idx].append(ET.XML("<backup><duration>{divisions_per_bar}</duration></backup>".format(divisions_per_bar=divisions_per_bar))) # insert after all treble clef notes to return insertion to first beat for bass clef notes to be added
         # need to interate through multiple chords per bar!!
         if data_bars[idx]['chords']:
+            i = 0
             for chord in data_bars[idx]['chords']:
-                for note in data_bars[idx]['chords'][0]['xml']:
+                for note in data_bars[idx]['chords'][i]['xml']:
                     xml_bars[idx].append(note)
+                i += 1
 
 def get_chord_symbol_indeces(bar_xml):
     indices = []
@@ -156,36 +165,63 @@ def get_note_length(divisions, time_sig, num_chords_bar):
     else:
         note_type = "quarter"
         duration = divisions
-        print('ISSUE: There may be errors in the arrangement. Bar(s) have too many chords. There is currently limited support for many chords per bar.')
+        if (verbose): print('ISSUE: There may be errors in the arrangement. Bar(s) have too many chords. There is currently limited support for many chords per bar.')
 
     return [note_type, dotted, duration]
 
+def set_in_directory(direc):
+    global in_dir
+    directory = direc
+
+def set_out_directory(direc):
+    global out_dir
+    out_dir = direc
+
+def set_verbose(bool):
+    global verbose
+    verbose = bool
 
 
-file_path = "../leadsheet_arranger/Baltimore_Oriole.musicxml"
+def main():
+    parser = argparse.ArgumentParser(description="Leadsheet Arranger")
+    parser.add_argument('input_directory', nargs='?', type=str, help=("path to input directory. Default is " + in_dir))
+    parser.add_argument('output_directory', nargs='?', type=str, help=("path to output directory. Default is " + out_dir))
+    parser.add_argument('-v', '--verbose', action='store_const', const='verbose', help="log parsing actions and errors.")
+    args = parser.parse_args()
+    if (args.input_directory != None):
+        set_in_directory(args.input_directory)
+    
+    if (args.output_directory != None):
+        set_out_directory(args.output_directory)
+    
+    if(args.verbose != None):
+        set_verbose(True)
 
- # convert xml file to element tree
-tree = ET.parse(file_path)
-root = tree.getroot()
+    for file in os.listdir(in_dir):
+        filename = os.fsdecode(file)
+        if filename.endswith(".musicxml"):
+            # convert xml file to element tree
+            tree = ET.parse(in_dir + filename)
+            root = tree.getroot()
 
-leadsheet_data = extract_leadsheet_data(root)
+            leadsheet_data = extract_leadsheet_data(root)
 
-chord_labels = embed_chords(leadsheet_data)
+            chord_labels = embed_chords(leadsheet_data)
 
-# all chords are generated with C as the root, so need transposing
-generated_chords = chord_generator(chord_labels)
-# mock_chords = mock_generated_chords()
+            # all chords are generated with C as the root, so need transposing
+            generated_chords = chord_generator(chord_labels, verbose)
+            # mock_chords = mock_generated_chords()
 
-full_arrangement_data = create_full_arrangement_data(generated_chords)
-
-
-
-path = "./arranged_pieces/"
-out_name = file_path.split("/")
-out_name = out_name[len(out_name)-1]
-add_bass_clef(root)
-insert_chords_to_arrangement(full_arrangement_data, root)
-tree.write(path + out_name, encoding="UTF-8", xml_declaration=True)
-print("Lead sheet has been sucesfully arranged. Please find it here: " + path + out_name)
+            full_arrangement_data = create_full_arrangement_data(generated_chords, leadsheet_data)
 
 
+            out_name = filename.split("/")
+            out_name = out_name[len(out_name)-1]
+
+            add_bass_clef(root)
+            insert_chords_to_arrangement(full_arrangement_data, root)
+            tree.write(out_dir + out_name, encoding="UTF-8", xml_declaration=True)
+            print("Lead sheet has been sucesfully arranged. Please find it here: " + out_dir + out_name)
+
+
+main()

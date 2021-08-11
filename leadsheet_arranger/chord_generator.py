@@ -9,6 +9,7 @@ from numpy.random import randint
 from numpy.random import randn
 import numpy as np
 import tensorflow as tf
+tf.get_logger().setLevel('INFO')
 import os
 import inspect
 import sys
@@ -20,6 +21,7 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 
 from chord_scraper.utils_dict import noteMidiDB, chord_label_to_integer_notation, extensions_to_integer_notation, note_number_to_name, unwanted_chord_tones
+
 
 #contains all valid chord types + does some converting to similar types to enable max capacity
 chord_types_dict = {
@@ -73,20 +75,20 @@ def chord_vectors_to_note_numbers(chords):
     return chords_as_numbers
 
 
-def chord_generator(leadsheet_chord_labels):
+def chord_generator(leadsheet_chord_labels, verbose):
     #generate 50 of each chord to be selected
     chords = generate_chords()
-    leadsheet_chords = assign_chords(leadsheet_chord_labels, chords)
+    leadsheet_chords = assign_chords(leadsheet_chord_labels, chords, verbose)
     return leadsheet_chords
 
-def assign_chords(leadsheet_chord_labels, chords):
+def assign_chords(leadsheet_chord_labels, chords, verbose):
     dominant_chords, min_7_chords, maj_7_chords = chords
     leadsheet_chords = []
     for chord_label in leadsheet_chord_labels:
         valid_label = validate_chord_label(chord_label)
         if(valid_label == False):
             leadsheet_chords.append([28,40])
-            print("error - ", chord_label, "not yet supported :(. Please manually arrange this chord")
+            if (verbose): print("error - ", chord_label, "not yet supported :(. Please manually arrange this chord")
         elif (valid_label == "dominant"):
             leadsheet_chords.append(random.choice(dominant_chords).copy())
         elif (valid_label == "minor-seventh"):
@@ -159,9 +161,9 @@ def print_chords_note_names(chords):
     print(note_names)
 
 
-chords = generate_chords()
+# chords = generate_chords()
 
-test_generated_chords(chords)
+# test_generated_chords(chords)
 # print_chords_note_names(chords[2])
 
 
