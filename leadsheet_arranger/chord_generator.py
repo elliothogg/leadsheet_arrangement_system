@@ -27,11 +27,14 @@ from chord_scraper.utils_dict import noteMidiDB, chord_label_to_integer_notation
 chord_types_dict = {
     "dominant": "dominant",
     "dominant-ninth": "dominant",
-    "minor-seventh": "minor-seventh",
+    "dominant-11th": "dominant",
+    "dominant-13th": "dominant",
     "minor": "minor-seventh",
     "minor-sixth": "minor-seventh",
+    "minor-seventh": "minor-seventh",
     "major": "major-seventh",
-    "major-seventh": "major-seventh"
+    "major-seventh": "major-seventh",
+    "major-ninth": "major-seventh"
 }
 
 #prevents scientific number notation

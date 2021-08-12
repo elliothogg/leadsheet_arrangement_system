@@ -199,7 +199,7 @@ def main():
 
     for file in os.listdir(in_dir):
         filename = os.fsdecode(file)
-        if filename.endswith(".musicxml"):
+        if filename.endswith(".musicxml") or filename.endswith(".xml"):
             # convert xml file to element tree
             tree = ET.parse(in_dir + filename)
             root = tree.getroot()
