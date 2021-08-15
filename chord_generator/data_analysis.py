@@ -15,7 +15,7 @@ sys.path.insert(0, parentdir)
 from chord_scraper.utils_dict import note_number_to_name, unwanted_chord_tones, noteMidiDB
 import copy
 
-out_dir = "./chord_generator/data_visualisations/"
+out_dir = "data_visualisations/"
 
 # plt.rcParams['figure.dpi'] = 300
 # plt.rcParams['savefig.dpi'] = 300
@@ -23,7 +23,7 @@ out_dir = "./chord_generator/data_visualisations/"
 # sns.set_context('notebook')
 # sns.set_style("ticks")
 
-df = pd.read_csv('chord_generator/training_data/label_note_vectors.csv')
+df = pd.read_csv('training_data/label_note_vectors.csv')
 
 print(df.head())
 print(df.dtypes)
@@ -151,7 +151,7 @@ def note_as_integer_notation(note):
     return (note + 9) % 12
 
 def plot_chords_stacked_bar_chart(chords_array, title):
-    plt.figure(figsize=(25,10), dpi=400)
+    plt.figure(figsize=(25,10))
     barWidth = 0.7
     cum_size = np.zeros(88)
     for idx, chord in enumerate(chords_array):
@@ -161,11 +161,13 @@ def plot_chords_stacked_bar_chart(chords_array, title):
     x_ticks.reverse()
 
     # Custom X axis
-    plt.xticks(notes, x_ticks, fontsize=8, weight='bold', rotation=45)
+    plt.yticks(notes, x_ticks, fontsize=12, rotation=90)
+    plt.xticks(fontsize=12)
 
-    plt.xlabel("Notes")
-    plt.ylabel("Occurences")
+    plt.ylabel("Notes", fontsize=20)
+    plt.xlabel("Occurences", fontsize=20)
     plt.title(title)
+    # plt.show()
     plt.savefig(out_dir + title.lower().replace(" ", "_") + ".png")
 
 
@@ -220,10 +222,10 @@ calculate_margin_of_error("minor_seventh", total_notes_minor_seventh, unwanted_n
 calculate_margin_of_error("major_seventh", total_notes_major_seventh, unwanted_note_count_major_seventh)
 calculate_margin_of_error("major", total_notes_major, unwanted_note_count_major)
 
-# plot_chords_stacked_bar_chart(major_seventh_chords_array, "Major Seventh Chords Uncleaned")
-# plot_chords_stacked_bar_chart(minor_seventh_chords_array, "Minor Seventh Chords Uncleaned")
-# plot_chords_stacked_bar_chart(major_chords_array, "Major Chords Uncleaned")
-# plot_chords_stacked_bar_chart(dominant_chords_array, "Dominant Seventh Chords Uncleaned")
+plot_chords_stacked_bar_chart(major_seventh_chords_array, "Major Seventh Chords Uncleaned")
+plot_chords_stacked_bar_chart(minor_seventh_chords_array, "Minor Seventh Chords Uncleaned")
+plot_chords_stacked_bar_chart(major_chords_array, "Major Chords Uncleaned")
+plot_chords_stacked_bar_chart(dominant_chords_array, "Dominant Seventh Chords Uncleaned")
 
 major_seventh_chords_array_cleaned = remove_unwanted_chord_tones(major_seventh_chords_array, "major-seventh")
 minor_seventh_chords_array_cleaned = remove_unwanted_chord_tones(minor_seventh_chords_array, "minor-seventh")
@@ -350,9 +352,10 @@ def convert_chord_vector_to_matrix(vector):
 
 
 
-create_chord_vectors_training_data()
+# create_chord_vectors_training_data()
+
 # create_chord_matrices_training_data()
 
 
 
-create_scatter_plot_chord_clusters()
+# create_scatter_plot_chord_clusters()
