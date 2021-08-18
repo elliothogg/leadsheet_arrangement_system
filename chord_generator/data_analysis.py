@@ -161,11 +161,11 @@ def plot_chords_stacked_bar_chart(chords_array, title):
     x_ticks.reverse()
 
     # Custom X axis
-    plt.yticks(notes, x_ticks, fontsize=12, rotation=90)
-    plt.xticks(fontsize=12)
+    plt.xticks(notes, x_ticks, fontsize=12, rotation=90)
+    plt.yticks(fontsize=12)
 
-    plt.ylabel("Notes", fontsize=20)
-    plt.xlabel("Occurences", fontsize=20)
+    plt.xlabel("Notes", fontsize=20)
+    plt.ylabel("Occurences", fontsize=20)
     plt.title(title)
     # plt.show()
     plt.savefig(out_dir + title.lower().replace(" ", "_") + ".png")
