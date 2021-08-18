@@ -33,6 +33,7 @@ chord_types_dict = {
     "minor-sixth": "minor-seventh",
     "minor-seventh": "minor-seventh",
     "major": "major-seventh",
+    "major-sixth": "major-seventh",
     "major-seventh": "major-seventh",
     "major-ninth": "major-seventh"
 }
