@@ -69,7 +69,7 @@ y, x = training_data
 model.compile(optimizer='adam', loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), metrics=['accuracy'])
 
 history = model.fit(x, y, validation_split=0.33, epochs=300, batch_size=1028)
-tf.keras.utils.plot_model(model, "cnn_network.png", show_shapes=True, show_layer_names=True)
+tf.keras.utils.plot_model(model, "CNN_classification_network.png", show_shapes=True, show_layer_names=True)
 
 # summarize history for accuracy
 plt.plot(history.history['accuracy'])

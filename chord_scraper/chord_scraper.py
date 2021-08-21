@@ -1,27 +1,32 @@
 import re
 import os
 from utils_dict import noteMidiDB, transpose_to_c, extensions_to_integer_notation, chord_label_to_integer_notation, alter_dict
-from stored_chords import stored_chords
 import copy
 import csv
 import argparse
 import xml.etree.ElementTree as ET
-import pandas
 import pickle
 
+# This scraper takes as input a folder of MusicXML files, and outputs pairs of chord symbols - chord voicings. For more information, see the paper - section 4
+# see CLI -h for information on in/out dirs
+
+# Initialise data lists
 chords = []
 chords_in_c = []
 chords_meta_data = {}
 index_of_inverted_chords = []
 deviation = 20 #allows notes either-side of the chord location to be included in the chord (notes next to each other in a chord are usually ofset on the x-axis)
-directory = "./fully_arranged_standards_musicxml" #directory of musicXML files
+in_dir = "./fully_arranged_standards_musicxml" #in_dir of musicXML files
 out_dir = "./dataset/"
-verbose = False
-meta = False
 
+# Both can be changed using CLI
+verbose = False # If True, additional information + errors will be printed during parsing
+meta = False  # if True, additional meta-information will be printed after parsing
+
+# Methods used by CLI menu 
 def set_in_directory(direc):
-    global directory
-    directory = direc
+    global in_dir
+    in_dir = direc
 
 def set_out_directory(direc):
     global out_dir
@@ -35,16 +40,18 @@ def set_meta(bool):
     global meta
     meta = bool
 
-def mine_chords_from_dir(directory):
-    for file in os.listdir(directory):
+# Iterates through each MusicXML file in the directory and calls extraction methods
+def mine_chords_from_dir(in_dir):
+    for file in os.listdir(in_dir):
         filename = os.fsdecode(file)
         if filename.endswith(".musicxml"):
-            print(os.path.join(directory, filename))
+            print(os.path.join(in_dir, filename))
             # count_degree_tags(filename) # checks if degree tags are even, essential for extensions to be gathered correctly
-            get_chords_meta(os.path.join(directory, filename))
+            get_chords_meta(os.path.join(in_dir, filename))
     print()
     print("Chord scraper has finished. Please find output at" + out_dir)
 
+# Iteratures through each bar in each MusicXML file and calls additional methods to extract chord symbols and meta-information
 def get_chords_meta(file_name):
     current_songs_chords = []
     tree = ET.parse(file_name)
@@ -57,6 +64,7 @@ def get_chords_meta(file_name):
             current_songs_chords.append(chord)
     get_chord_notes(file_name, current_songs_chords)
 
+# extracts chord symbols from each bar
 def get_chords_from_bar(bar):
     bar_number = bar.attrib['number']
     bar_chords = []
@@ -83,6 +91,7 @@ def get_chords_from_bar(bar):
         bar_chords.append(chord)
     return bar_chords
 
+# extracts chord voicings for each extracted chord symbol. Uses x-axis-deviation to do so - see report for more information - section 4.3
 def get_chord_notes(file_name, current_songs_chords):
     note_found = False
     for chord in current_songs_chords:
@@ -106,6 +115,7 @@ def get_chord_notes(file_name, current_songs_chords):
                     note_found = False
     chords.append(current_songs_chords)
 
+# Converts numerical note alteration to note label format
 def alter_note(note, step):
     if step == "1":
         return note + "#"
@@ -113,26 +123,26 @@ def alter_note(note, step):
         return note + "b"
     return note
 
+# Flattens each bars chords into 1D array of chords
 def flatten_chords():
     global chords 
     chords = [item for sublist in chords for item in sublist]
 
-# sort function for ordering note names
-def sort_note_names(note):
-    return noteMidiDB[note]
-
+# Converts total x-axis deviation to upper and lower limits
 def note_deviation_limits(deviation, location):
     location_int = float(location)
     lower_limit = location_int - deviation
     upper_limit = location_int + deviation
     return [lower_limit, upper_limit]
 
+# Checks if a note's x-axis location is within deviation limit
 def note_within_deviation_limits(deviation_limits, location):
     location_int = float(location)
     if (location_int > deviation_limits[0]) and (location_int < deviation_limits[1]):
         return True
     return False
 
+# Gathers list of all chords that have less than 3 notes
 def return_invalid_chords(chords):
     invalid_chord_indices = []
     i = 0
@@ -142,13 +152,14 @@ def return_invalid_chords(chords):
         i = i + 1
     return invalid_chord_indices
 
-# utility function
+# Prints chords prettily
 def chords_pretty_print(chords_in):
     j=0
     for chord in chords_in:
         print(j, chord)
         j = j + 1
     
+# Removes all invalid chords. Does this in reverse order to avoid indexing issues
 def remove_invalid_chords():
     count = 0
     global chords 
@@ -159,6 +170,7 @@ def remove_invalid_chords():
         count += 1
     if (verbose): print("Total number of chords with < 3 notes: ", count, ". Removing now.")
 
+# Adds note number representations of chords
 def add_note_numbers():
     global chords 
     for chord in chords:
@@ -167,12 +179,18 @@ def add_note_numbers():
             note_numbers.append(noteMidiDB[note])
         chord['note_numbers'] = note_numbers
 
+# custom sort function
+def sort_note_names(note):
+    return noteMidiDB[note]
+
+# Sort function for ordering notes of chord voicings from low to high (left to right on piano)
 def sort_notes():
     global chords
     for chord in chords:
         chord['note_numbers'].sort()
         chord['notes'].sort(key=sort_note_names)
 
+# Gets the x-location of the first note after each harmony element
 def get_chord_notes_location(harmony_ele, bar):
     harmony_ele_index = list(bar).index(harmony_ele)
     number_of_eles_in_bar = (len(list(bar)))
@@ -184,6 +202,7 @@ def get_chord_notes_location(harmony_ele, bar):
     if (verbose): print('Error - x-location of chord symbol could not be located. Chord will be removed')
     return None
 
+# gets chord symbol extensions
 def extract_extensions(degree_eles):
     extensions = []
     for degree in degree_eles:
@@ -198,6 +217,7 @@ def extract_extensions(degree_eles):
         extensions.append({"degree": value, "alter": alter, "type": degree_type})
     return extensions
 
+# converts root MusicXML element to chord symbol dictionary
 def convert_root_ele_to_chord_sym(harmony_ele):
     root_ele = harmony_ele.find('root') # <root> element encapsulates chord symbols
     try:
@@ -226,7 +246,9 @@ def convert_root_ele_to_chord_sym(harmony_ele):
         bass_note = bass_note + alter_dict[bass_adjust]
     return {'root_note': chord_root, 'type': chord_type}
 
-def count_degree_tags(file_name): #checks there is an equal amount of degree-value/alter/type tags
+
+#checks there is an equal amount of degree-value/alter/type elements. If there isn't it means the MusicXML file is invalid
+def count_degree_tags(file_name):
     with open(file_name) as topo_file:
         num_degree_val = 0
         num_degree_alt = 0
@@ -241,16 +263,18 @@ def count_degree_tags(file_name): #checks there is an equal amount of degree-val
     if (verbose):
         print(file_name + " " + "degree tags equal? ", num_degree_val, num_degree_alt, num_degree_type, (num_degree_val == num_degree_alt == num_degree_type))
 
-# utility function
+# Prints all chords with extensions (utility function)
 def print_chords_with_extensions(chords):
     print("\nCHORDS WITH EXTENSIONS:\n")
     for chord in chords:
         if len(chord['extensions']):
             print(chord)
 
+# Prints total number of chords
 def print_num_chords():
     print(len(chords))
 
+# Prints total number of inverted chords
 def count_num_inverted_chords():
     global chords
     global index_of_inverted_chords
@@ -270,6 +294,7 @@ def count_num_inverted_chords():
     if (verbose): print ("Number of inverted chords: ", count)
     return count
 
+# Writes Raw Chord data as pickle and CSV
 def write_raw_chords_data():
     #Write as Pickle
     with open(out_dir + 'raw_chords.pickle', 'wb') as file:
@@ -287,7 +312,8 @@ def write_raw_chords_data():
             note_numbers = chord["note_numbers"]
             writer.writerow({"root": root, "type": type, "extensions": extensions, "notes": notes, "note_numbers": note_numbers})
     
-
+# Transposes all chord voicings so that they are rooted in C - see report for more information - section 4.3.2
+# Copies raw chords list, transposes all chords, and removes redundant key/values from dictionary
 def transpose_chords_to_key_c():
     global chords
     global chords_in_c
@@ -310,7 +336,8 @@ def transpose_chords_to_key_c():
             chord['note_numbers'][idx] = chord['note_numbers'][idx] + gap
 
         del chord['root_note']
-            
+
+# Tests that transpose function is working - i.e. only chords in root position should have root of C      
 # the number of chords with C NOT as bottom note should be = total num inverted chords
 def test_transpose_to_c():
     index_of_inverted_transposed_chords = []
@@ -336,11 +363,13 @@ def test_transpose_to_c():
         print ("success - transpose working correctly")
         return True
 
+# Utility function to locate any wrongly transposed chords. Does this by crossreferencing with inverted chords list
 def find_incorrectly_transposed_chords(index_of_inverted_transposed_chords):
     for chord in index_of_inverted_chords:
         if chord not in index_of_inverted_transposed_chords:
             if (verbose): print(chords[chord])
 
+# Recursive function that moves very low/very high notes towards centre of the piano
 def transpose_extreme_octaves():
     global chords_in_c
     for chord in chords_in_c:
@@ -366,6 +395,7 @@ def transpose_extreme_octaves():
         if (verbose): print("chord at index ", index, "deleted")
     if (verbose): print(len(chords_in_c))
 
+# test function which is used to break recursion of transpose_extreme_octaves function
 def test_transpose_extreme_octaves(is_user_test=True):
     global chords_in_c
     for chord in chords_in_c:
@@ -375,6 +405,7 @@ def test_transpose_extreme_octaves(is_user_test=True):
     if is_user_test and (verbose): print("Success - all chords in desirable range")
     return True
 
+# Writes Cleaned and Transposed Chord data as pickle and CSV
 def write_chords_in_c_data():
     #Write as Pickle
     with open(out_dir + 'chords_in_c.pickle', 'wb') as file:
@@ -390,6 +421,7 @@ def write_chords_in_c_data():
             note_numbers = chord["note_numbers"]
             writer.writerow({"type": type, "extensions": extensions, "note_numbers": note_numbers})
 
+# Prints chord type information of data
 def gather_chord_type_meta_data():
     for chord in chords:
         if chord['type'] in chords_meta_data:
@@ -398,6 +430,7 @@ def gather_chord_type_meta_data():
     print(chords_meta_data)
 
 def main():
+    # CLI
     parser = argparse.ArgumentParser(description="Chord Scraper Tool")
     parser.add_argument('input_directory', nargs='?', type=str, help="path to input directory. Default is current directory.")
     parser.add_argument('output_directory', nargs='?', type=str, help="path to output directory. Default is current directory.")
@@ -420,7 +453,7 @@ def main():
     if not os.path.exists(out_dir):
         os.mkdir(out_dir)
 
-    mine_chords_from_dir(directory)
+    mine_chords_from_dir(in_dir)
     flatten_chords()
 
     # if (meta):

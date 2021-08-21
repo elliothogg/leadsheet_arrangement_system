@@ -1,6 +1,3 @@
-# main file for running arranger
-# this uses pretrained model, to retrain model, see *package*
-
 from data_extractor import extract_leadsheet_data
 from chord_embedder import embed_chords
 from chord_generator import chord_generator
@@ -10,18 +7,22 @@ import inspect
 import sys
 import xml.etree.ElementTree as ET
 import argparse
-
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
-
 from chord_scraper.utils_dict import noteMidiDB, chord_label_to_integer_notation, extensions_to_integer_notation, key_sig_table, note_number_to_xml_flat, note_number_to_xml_sharp
+
+
+# This executes the main method of the Leadsheet Arrangement System (LSAS). All other subsystems are called within this script.
+# It takes as input a folder containining MusicXML lead sheets, and output a folder containing MusicXML full arrangements of those leadsheets
+# For further information, see report section 6
 
 
 in_dir = "./leadsheets/"
 out_dir = "./arranged_pieces/"
 verbose = False
 
+# Create mock chords in place of generated chords - used to test functions
 def mock_generated_chords():
     mock_chords = []
     length = 56
@@ -48,7 +49,7 @@ def create_full_arrangement_data(generated_chords, leadsheet_data):
         raise ValueError('Num of generated chords is not equal to number of chords in leadsheet')
     return full_arrangement_data
 
-# as all generated chords are rooted in C, we need to transpose them back to their original root
+# As all generated chords are rooted in C, we need to transpose them back to their original root
 def transpose_chord_notes(notes, root):
     # all chords will get transposed down apart from chords with root of C3
     C4 = noteMidiDB['C4']
@@ -58,7 +59,7 @@ def transpose_chord_notes(notes, root):
     for idx, note in enumerate(notes):
         notes[idx] = notes[idx] - amount
 
-
+# Inserts bass clef (5 bottom lines) into lead sheet so that generated chords can be inserted
 def add_bass_clef(xml_tree):
     attributes = xml_tree.find('part').find('measure').find('attributes')
     treble_clef = attributes.find('clef')
@@ -68,6 +69,8 @@ def add_bass_clef(xml_tree):
     attributes.insert(treble_clef_index + 1, bass_clef) # insert bass clef element after treble clef element
     attributes.insert(treble_clef_index - 1, ET.XML("<staves>2</staves>")) # insert stave element indicating there are 2 clefs
 
+
+# Gets index of treble clef "clef" element so that bass clef "clef" element can be inserted after it
 def get_treble_clef_element_index(attri_ele, treble_ele):
     i = 0
     for child in attri_ele:
@@ -76,6 +79,7 @@ def get_treble_clef_element_index(attri_ele, treble_ele):
         i = i + 1
     raise ValueError('treble clef xml format not recognised')
 
+# Converts a note represented as a note number to a note label, i.e. 16 -> C2
 def convert_note_nums_to_notes(notes, key_sig):
     key_type = key_sig_table["".join(key_sig)] #sharp or flat notes used
     for idx, note in enumerate(notes):
@@ -84,6 +88,7 @@ def convert_note_nums_to_notes(notes, key_sig):
         else:
             notes[idx] = note_number_to_xml_sharp[notes[idx]]
 
+# Takes a list of note labels and converts them into MusicXML note elements that can be inserted into the arrangement
 def create_xml_bass_clef_chords(notes, time_sig, divisions, num_chords_bar):
     xml_notes = []
     note_length_type, dotted, duration = get_note_length(divisions, time_sig, num_chords_bar)
@@ -134,6 +139,7 @@ def insert_chords_to_arrangement(arrangement_data, arrangement_xml_root):
                     xml_bars[idx].append(note)
                 i += 1
 
+# Find position to insert notes
 def get_chord_symbol_indeces(bar_xml):
     indices = []
     for idx, child in enumerate(bar_xml):
@@ -141,6 +147,7 @@ def get_chord_symbol_indeces(bar_xml):
             indices.append(idx)
     return indices 
 
+# Uses time signature and divisions to determine how long to make the notes of each chord voicing. See report section 6.1.3 for more information
 def get_note_length(divisions, time_sig, num_chords_bar):
     duration = (int(time_sig[0]) * int(divisions)) / int(num_chords_bar)
     divisions = int(divisions)
@@ -169,6 +176,8 @@ def get_note_length(divisions, time_sig, num_chords_bar):
 
     return [note_type, dotted, duration]
 
+
+# Functions used by the CLI
 def set_in_directory(direc):
     global in_dir
     directory = direc
@@ -177,12 +186,14 @@ def set_out_directory(direc):
     global out_dir
     out_dir = direc
 
+# Disables/enables additional printing of program messages
 def set_verbose(bool):
     global verbose
     verbose = bool
 
-
+# Main method. Contains a CLI, as well as calls to other subsystems.
 def main():
+    #CLI 
     parser = argparse.ArgumentParser(description="Leadsheet Arranger")
     parser.add_argument('input_directory', nargs='?', type=str, help=("path to input directory. Default is " + in_dir))
     parser.add_argument('output_directory', nargs='?', type=str, help=("path to output directory. Default is " + out_dir))
@@ -197,6 +208,7 @@ def main():
     if(args.verbose != None):
         set_verbose(True)
 
+    # Loop through each file in input directory and perform lead sheet arrangement on those ending in .musicxml or .xml
     for file in os.listdir(in_dir):
         filename = os.fsdecode(file)
         if filename.endswith(".musicxml") or filename.endswith(".xml"):
@@ -210,7 +222,7 @@ def main():
 
             # all chords are generated with C as the root, so need transposing
             generated_chords = chord_generator(chord_labels, verbose)
-            # mock_chords = mock_generated_chords()
+            # mock_chords = mock_generated_chords() # mock chords can be used for testing
 
             full_arrangement_data = create_full_arrangement_data(generated_chords, leadsheet_data)
 
@@ -222,6 +234,5 @@ def main():
             insert_chords_to_arrangement(full_arrangement_data, root)
             tree.write(out_dir + out_name, encoding="UTF-8", xml_declaration=True)
             print("Lead sheet has been sucesfully arranged. Please find it here: " + out_dir + out_name)
-
 
 main()

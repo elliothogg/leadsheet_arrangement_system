@@ -1,3 +1,6 @@
+# Contains various utility conversion dictionaries used by the chord scraper
+
+# Converts note labels to note numbers
 noteMidiDB = {
     "C8": 88,
     "B#7": 88,
@@ -155,6 +158,7 @@ noteMidiDB = {
     "A0": 1,
 }
 
+# Converts note numbers to note labels
 note_number_to_name = {
     88: "C8",
     87: "B7",
@@ -246,6 +250,7 @@ note_number_to_name = {
     1: "A0",
 }
 
+# Converts note numbers to MusicXML compatible dictionaries (black notes as flats (b))
 note_number_to_xml_flat = {
     88: {"step": "C", "alter": "", "octave": "8"},
     87: {"step": "B", "alter": "", "octave": "7"},
@@ -337,6 +342,7 @@ note_number_to_xml_flat = {
      1: {"step": "A", "alter": "", "octave": "0"},  
 }
 
+# Converts note numbers to MusicXML compatible dictionaries (black notes as sharps (#))
 note_number_to_xml_sharp = {
     88: {"step": "C", "alter": "", "octave": "8"},
     87: {"step": "B", "alter": "", "octave": "7"},
@@ -428,6 +434,7 @@ note_number_to_xml_sharp = {
     1: {"step": "A", "alter": "", "octave": "0"},
 }
 
+# Returns the key signature type (flat or sharp)
 key_sig_table = {
     "C+": "b",
     "C-": "b",
@@ -458,6 +465,7 @@ key_sig_table = {
 
 }
 
+# Stores the distance of each note label from C
 transpose_to_c = {
     "B#": {
         "up": 0,
@@ -554,6 +562,7 @@ transpose_to_c = {
 }
 
 # https://en.wikipedia.org/wiki/Pitch_class#Integer_notation
+# Each chord type as integer notation
 chord_label_to_integer_notation = {
     'dominant': [0, 4, 7, 10], 
     'minor-seventh': [0, 3, 7, 10], 
@@ -580,6 +589,7 @@ chord_label_to_integer_notation = {
     'suspended-second': [0, 2, 7]
 }
 
+# Converts chord symbol extensions to their integer notation (see above wiki link)
 extensions_to_integer_notation = {
     "13": 9,
     "11": 5,
@@ -599,6 +609,7 @@ unwanted_chord_tones = {
     "major": [1, 3, 5, 6, 8, 10],
 }
 
+# returns note label representation of note alterations
 alter_dict = {
     "-2": "bb",
     "-1": "b",

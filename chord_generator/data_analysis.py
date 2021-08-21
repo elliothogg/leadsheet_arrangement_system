@@ -17,11 +17,6 @@ import copy
 
 out_dir = "data_visualisations/"
 
-# plt.rcParams['figure.dpi'] = 300
-# plt.rcParams['savefig.dpi'] = 300
-# sns.set(rc={"figure.dpi":300, 'savefig.dpi':300})
-# sns.set_context('notebook')
-# sns.set_style("ticks")
 
 df = pd.read_csv('training_data/label_note_vectors.csv')
 
@@ -34,19 +29,17 @@ print("number of null entries: ", df.isnull().sum())
 value_count=df['label'].value_counts()
 print(value_count)
 
-# plt.figure(figsize=(15, 8));
-# countplot = sns.countplot(y='label',data = df, orient="h");
-# countplot.set_yticklabels(countplot.get_yticklabels(), fontsize=14)
-# countplot.set_xticklabels([0,250,500,750,1000,1250,1500,1750,2000], fontsize=14)
-# countplot.set_xlabel("", fontsize=16)
-# countplot.set_ylabel("", fontsize=16)
-
-# for bar in countplot.patches:
-#     countplot.annotate('{:}'.format(bar.get_height()), (bar.get_x()+0.15, bar.get_height()+1), fontsize=15)
-# plt.show()
-
-
-# plt.savefig(out_dir + "chords_count_unfiltered.png")
+def plot_chords_count_unfiltered(df):
+    plt.figure(figsize=(15, 8));
+    countplot = sns.countplot(y='label',data = df, orient="h");
+    countplot.set_yticklabels(countplot.get_yticklabels(), fontsize=14)
+    countplot.set_xticklabels([0,250,500,750,1000,1250,1500,1750,2000], fontsize=14)
+    countplot.set_xlabel("", fontsize=16)
+    countplot.set_ylabel("", fontsize=16)
+    # for bar in countplot.patches:
+    #     countplot.annotate('{:}'.format(bar.get_height()), (bar.get_x()+0.15, bar.get_height()+1), fontsize=15)
+    plt.show()
+    plt.savefig(out_dir + "chords_count_unfiltered.png")
 
 
 # converts notes to np arrays

@@ -13,6 +13,8 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 from chord_scraper.utils_dict import chord_label_to_integer_notation, extensions_to_integer_notation, noteMidiDB
 
+# This script takes the Jazz-Chords dataset and exports 
+
 def load_pickle(path):
     data = None
     with open(path, 'rb') as file:
@@ -107,79 +109,6 @@ def write_label_note_vectors():
             writer.writerow({'label': label, 'notes': notes})
 
 
-# this creates two arrays: trainX - (num of items, 88) . Train y - (num of items, 12)
-def create_training_data():
-    global training_data
-    number_of_items = len(chords_in_c)
-    trainX = np.empty([number_of_items, 88]) #notes
-    trainy = np.empty([number_of_items, 12]) #labels
-
-    index = 0
-
-    for chord in chords_in_c:
-        trainX[index] = chord['notes']
-        trainy[index] = chord['label']
-        index = index + 1
-    training_data = (trainX, trainy)
-
-
-# this creates a 1D representation of the labels and chord notes in the shape of (88,). The 12 note label vectors are embedded into an 88 note vector, sitting in the middle C octave
-def create_1d_training_data():
-    global training_data_1d
-    number_of_items = len(chords_in_c)
-    trainX = np.empty([number_of_items, 88]) #notes
-    trainy = np.empty([number_of_items, 88]) #labels
-
-    index = 0
-
-    for chord in chords_in_c:
-        trainX[index] = chord['notes'] # assign 88 chord notes array to trainX data
-
-        label_88 = np.zeros(76, dtype='int8') # length 76 to account for 12 note label vector to be added
-        C4 = noteMidiDB['C4'] - 1 # needs to be 0 indexed
-        label_88 = np.insert(label_88, C4, chord['label']) # inserts the 12 note label vector at the position of C4
-        trainy[index] = label_88
-        index = index + 1
-    training_data_1d = (trainX, trainy)
-
-
-# this creates a 2d representation of the training data: trainX_2d - (num of items, 7, 12) the bottom 3 notes and top note of the piano are disregardedm giving 7 full octaves
-#                                                        trainy_2d - (num of items, 7, 12) the original 12 note vector is transformed into the same shape as trainy, with that vector sitting in the middle C octave
-# cGan training generally requires the source and expected data to be of the same shape
-def create_2d_training_data():
-    global training_data_2d
-    number_of_items = len(chords_in_c)
-    trainX_2d = np.empty([number_of_items, 7, 12]) #notes
-    trainy_2d = np.zeros([number_of_items, 7, 12]) #labels
-    index = 0
-    for chord in chords_in_c:
-
-        # convert 88 note vector into 7 x 12 note vector
-        notes = chord['notes'][3:87] # ommiting bottom 3 notes and top note, leaving 7 full octaves
-        i = 0
-        for j in range(0, notes.shape[0], 12): # loop through each set of 12 notes
-            trainX_2d[index][i] = notes[j: j+12] # assign each set of 12 notes to an array in trainX_2d
-            i = i + 1
-        
-        # convert 1d 12 label vector into 7 x 12 vector
-        label = chord['label']
-        trainy_2d[index][3] = label
-
-        index = index + 1
-    training_data_2d = (trainX_2d, trainy_2d)
-
-
-def write_training_data():
-    training_data_pickle = pickle.dumps(training_data)
-    training_data_2d_pickle = pickle.dumps(training_data_2d)
-    with open(out_dir + 'training_data.pickle', 'wb') as file:
-        pickle.dump(training_data, file)
-    with open(out_dir + 'training_data_1d.pickle', 'wb') as file:
-        pickle.dump(training_data_1d, file)
-    with open(out_dir + 'training_data_2d.pickle', 'wb') as file:
-        pickle.dump(training_data_2d, file)
-
-
 def main():
     print("Embedding Chord Data...")
     if not os.path.exists(out_dir):
@@ -187,20 +116,15 @@ def main():
 
     write_labels_note_numbers()
     create_chord_label_vectors()
-    
-    
     convert_notes_to_88_key_vectors()
     convert_labels_to_numpy_arrays() #use binary number instead
 
+    write_label_note_vectors()
     print("Writing Training Data...")
 
-    write_label_note_vectors()
 
-    create_training_data()
-    create_1d_training_data()
-    create_2d_training_data()
-    write_training_data()
 
+ 
     print("Embedding Complete. Find Training Data in " + out_dir)
 
 main()
