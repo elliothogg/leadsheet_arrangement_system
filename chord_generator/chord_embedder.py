@@ -6,14 +6,16 @@ import numpy as np
 import pickle
 import sys
 import inspect
-
-
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 from chord_scraper.utils_dict import chord_label_to_integer_notation, extensions_to_integer_notation, noteMidiDB
 
-# This script takes the Jazz-Chords dataset and exports 
+# This script takes the Jazz-Chords dataset, performs data analysis, and exports training data for the cDCGAN model
+# The training data is 3 x 818 chord voicings - dominant, minor-seventh, and major-seventh
+# The traning data is a tuple, with the first array containing encoded chord types - 0 = dominant, 1 = minor-seventh, 2 = major-seventh
+# The second array has either 88 length chord voicing vectors, or 3 x 12 chord voicing matrices
+# See report section 5 for more details
 
 def load_pickle(path):
     data = None

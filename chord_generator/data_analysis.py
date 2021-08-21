@@ -20,14 +20,15 @@ out_dir = "data_visualisations/"
 
 df = pd.read_csv('training_data/label_note_vectors.csv')
 
-print(df.head())
-print(df.dtypes)
-print(df.describe())
-
-print("number of null entries: ", df.isnull().sum())
-
-value_count=df['label'].value_counts()
-print(value_count)
+def print_meta_information(df):
+    print(df.head())
+    print(df.dtypes)
+    print(df.describe())
+    print("number of null entries: ", df.isnull().sum())
+   
+def print_unfiltered_chord_distributions(df):
+    value_count=df['label'].value_counts()
+    print(value_count)
 
 def plot_chords_count_unfiltered(df):
     plt.figure(figsize=(15, 8));

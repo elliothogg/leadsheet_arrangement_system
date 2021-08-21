@@ -24,6 +24,7 @@ matplotlib==3.4.2
 numpy==1.19.5
 oauthlib==3.1.1
 opt-einsum==3.3.0
+pandas==1.3.2
 Pillow==8.3.1
 plaidml==0.7.0
 plaidml-keras==0.7.0
@@ -34,11 +35,13 @@ pycparser==2.20
 pydot==1.4.2
 pyparsing==2.4.7
 python-dateutil==2.8.1
+pytz==2021.1
 PyYAML==5.4.1
 requests==2.25.1
 requests-oauthlib==1.3.0
 rsa==4.7.2
 scipy==1.7.0
+seaborn==0.11.2
 six==1.15.0
 tensorboard==2.5.0
 tensorboard-data-server==0.6.1
