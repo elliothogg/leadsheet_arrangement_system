@@ -22,7 +22,7 @@ from leadsheet_arranger.chord_generator import generate_chords, test_generated_c
 
 # Loads the embedded Jazz-Chords dataset matrices and reshape chord voicing matrices from 7X12 to 3x12
 def load_data():
-    data_pickle_path = '../../chord_matrices_training_data.pickle'
+    data_pickle_path = '../training_data/chord_matrices_training_data.pickle'
     with open(data_pickle_path, 'rb') as file:
         training_data = pickle.load(file)
     t_1 = reshape_3_x_12(training_data)
@@ -250,10 +250,10 @@ def train(g_model, d_model, gan_model, dataset, latent_dim, n_epochs=300, n_batc
         dom_acc, min_7_acc, maj_7_acc, dom_uniq, min_7_uniq, maj_7_uniq = test_generated_chords(generate_chords(g_model))
         chords_acc[0].append(dom_acc); chords_acc[1].append(min_7_acc); chords_acc[2].append(maj_7_acc)
         chords_uniq[0].append(dom_uniq); chords_uniq[1].append(min_7_uniq); chords_uniq[2].append(maj_7_uniq)
-    # plot_history(d1_hist, d2_hist, g_hist, a1_hist, a2_hist)
-    # plot_chord_metrics_history(chords_acc, chords_uniq)
-    # save the generator model
-    # g_model.save('generator.h5')
+    plot_history(d1_hist, d2_hist, g_hist, a1_hist, a2_hist)
+    plot_chord_metrics_history(chords_acc, chords_uniq)
+    #save the generator model
+    g_model.save('generator.h5')
 
 
 # size of the latent space

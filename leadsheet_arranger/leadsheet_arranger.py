@@ -1,6 +1,3 @@
-from data_extractor import extract_leadsheet_data
-from chord_embedder import embed_chords
-from chord_generator import chord_generator
 import copy
 import os
 import inspect
@@ -11,7 +8,9 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 from chord_scraper.utils_dict import noteMidiDB, chord_label_to_integer_notation, extensions_to_integer_notation, key_sig_table, note_number_to_xml_flat, note_number_to_xml_sharp
-
+from leadsheet_arranger.data_extractor import extract_leadsheet_data
+from leadsheet_arranger.chord_embedder import embed_chords
+from leadsheet_arranger.chord_generator import chord_generator
 
 # This executes the main method of the Leadsheet Arrangement System (LSAS). All other subsystems are called within this script.
 # It takes as input a folder containining MusicXML lead sheets, and output a folder containing MusicXML full arrangements of those leadsheets
@@ -180,7 +179,7 @@ def get_note_length(divisions, time_sig, num_chords_bar):
 # Functions used by the CLI
 def set_in_directory(direc):
     global in_dir
-    directory = direc
+    in_dir = direc
 
 def set_out_directory(direc):
     global out_dir
@@ -207,10 +206,14 @@ def main():
     
     if(args.verbose != None):
         set_verbose(True)
+    
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
 
     # Loop through each file in input directory and perform lead sheet arrangement on those ending in .musicxml or .xml
     for file in os.listdir(in_dir):
         filename = os.fsdecode(file)
+        num_leadsheets_arranged = 0
         if filename.endswith(".musicxml") or filename.endswith(".xml"):
             # convert xml file to element tree
             tree = ET.parse(in_dir + filename)
@@ -234,5 +237,7 @@ def main():
             insert_chords_to_arrangement(full_arrangement_data, root)
             tree.write(out_dir + out_name, encoding="UTF-8", xml_declaration=True)
             print("Lead sheet has been sucesfully arranged. Please find it here: " + out_dir + out_name)
+            num_leadsheets_arranged += 1
+    if num_leadsheets_arranged == 0: print("\nCould not find any MusicXML leadsheets in input directory")
 
 main()

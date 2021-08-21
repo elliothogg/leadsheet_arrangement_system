@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 
-data_pickle_path = '../../chord_matrices_training_data.pickle'
+data_pickle_path = '../training_data/chord_matrices_training_data.pickle'
 
 
 def reshape_3_x_12(data):

@@ -17,29 +17,21 @@ from chord_scraper.utils_dict import chord_label_to_integer_notation, extensions
 # The second array has either 88 length chord voicing vectors, or 3 x 12 chord voicing matrices
 # See report section 5 for more details
 
+
 def load_pickle(path):
     data = None
     with open(path, 'rb') as file:
         data =  pickle.load(file)
     return data
 
+# Load Jazz-Chords dataset
 chords_in_c = load_pickle("../chord_scraper/dataset/chords_in_c.pickle")
+
+# Set out dir
 out_dir = "./training_data/"
-training_data = ()
-training_data_1d = ()
-training_data_2d = ()
+
+
 verbose = False
-
-
-def write_labels_note_numbers():
-    with open(out_dir + 'label_note_numbers.csv', mode='w') as csv_file:
-        fieldnames = ['label', 'notes']
-        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-        writer.writeheader()
-        for chord in chords_in_c:
-            label = chord['type']
-            notes = chord['note_numbers']
-            writer.writerow({'label': label, 'notes': notes})
 
 
 def create_chord_label_vectors():
@@ -90,18 +82,9 @@ def convert_notes_to_88_key_vectors():
         del chord['note_numbers']
 
 
-# a vector of 12 numbers representing which notes are in the chord
-def convert_labels_to_numpy_arrays():
-    global chords_in_c
-    for chord in chords_in_c:
-        label = np.zeros(12, dtype='int8')
-        for step in chord['label']:
-            label[step] = 1
-        chord['label'] = label
-
 
 def write_label_note_vectors():
-    with open(out_dir + 'label_note_vectors.csv', mode='w') as csv_file:
+    with open(out_dir + 'jazz_chords_label_note_vectors.csv', mode='w') as csv_file:
         fieldnames = ['label', 'notes']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
@@ -116,10 +99,9 @@ def main():
     if not os.path.exists(out_dir):
         os.mkdir(out_dir)
 
-    write_labels_note_numbers()
     create_chord_label_vectors()
     convert_notes_to_88_key_vectors()
-    convert_labels_to_numpy_arrays() #use binary number instead
+ 
 
     write_label_note_vectors()
     print("Writing Training Data...")

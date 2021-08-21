@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 
-data_pickle_path = '../../chord_vectors_training_data.pickle'
+data_pickle_path = '../training_data/chord_vectors_training_data.pickle'
 
 with open(data_pickle_path, 'rb') as file:
     training_data = pickle.load(file)

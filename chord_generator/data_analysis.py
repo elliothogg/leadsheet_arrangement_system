@@ -17,6 +17,7 @@ import copy
 
 out_dir = "data_visualisations/"
 
+training_out_dir = "training_data/"
 
 df = pd.read_csv('training_data/label_note_vectors.csv')
 
@@ -216,10 +217,10 @@ calculate_margin_of_error("minor_seventh", total_notes_minor_seventh, unwanted_n
 calculate_margin_of_error("major_seventh", total_notes_major_seventh, unwanted_note_count_major_seventh)
 calculate_margin_of_error("major", total_notes_major, unwanted_note_count_major)
 
-plot_chords_stacked_bar_chart(major_seventh_chords_array, "Major Seventh Chords Uncleaned")
-plot_chords_stacked_bar_chart(minor_seventh_chords_array, "Minor Seventh Chords Uncleaned")
-plot_chords_stacked_bar_chart(major_chords_array, "Major Chords Uncleaned")
-plot_chords_stacked_bar_chart(dominant_chords_array, "Dominant Seventh Chords Uncleaned")
+# plot_chords_stacked_bar_chart(major_seventh_chords_array, "Major Seventh Chords Uncleaned")
+# plot_chords_stacked_bar_chart(minor_seventh_chords_array, "Minor Seventh Chords Uncleaned")
+# plot_chords_stacked_bar_chart(major_chords_array, "Major Chords Uncleaned")
+# plot_chords_stacked_bar_chart(dominant_chords_array, "Dominant Seventh Chords Uncleaned")
 
 major_seventh_chords_array_cleaned = remove_unwanted_chord_tones(major_seventh_chords_array, "major-seventh")
 minor_seventh_chords_array_cleaned = remove_unwanted_chord_tones(minor_seventh_chords_array, "minor-seventh")
@@ -285,7 +286,7 @@ def create_chord_vectors_training_data():
     labels_np = np.array(labels)
     voicings_np = np.array(voicings)
     training_data = (labels_np, voicings_np)
-    with open('chord_vectors_training_data.pickle', 'wb') as file:
+    with open(training_out_dir + 'chord_vectors_training_data.pickle', 'wb') as file:
         pickle.dump(training_data, file)
 
 
@@ -335,7 +336,7 @@ def create_chord_matrices_training_data():
     labels_np = np.array(labels)
     voicings_np = np.array(voicings)
     training_data = (labels_np, voicings_np)
-    with open('chord_matrices_training_data.pickle', 'wb') as file:
+    with open(training_out_dir + 'chord_matrices_training_data.pickle', 'wb') as file:
         pickle.dump(training_data, file)
 
 def convert_chord_vector_to_matrix(vector):

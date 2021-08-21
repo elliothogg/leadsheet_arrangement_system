@@ -48,8 +48,7 @@ def mine_chords_from_dir(in_dir):
             print(os.path.join(in_dir, filename))
             # count_degree_tags(filename) # checks if degree tags are even, essential for extensions to be gathered correctly
             get_chords_meta(os.path.join(in_dir, filename))
-    print()
-    print("Chord scraper has finished. Please find output at" + out_dir)
+
 
 # Iteratures through each bar in each MusicXML file and calls additional methods to extract chord symbols and meta-information
 def get_chords_meta(file_name):
@@ -466,15 +465,18 @@ def main():
     if (meta):
         count_num_inverted_chords()
 
-    write_raw_chords_data()
+    # write_raw_chords_data()
     transpose_chords_to_key_c()
     test_transpose_to_c()
     transpose_extreme_octaves()
     test_transpose_extreme_octaves()
-    write_chords_in_c_data()
+    # write_chords_in_c_data()
 
 
     if (meta):
         gather_chord_type_meta_data()
+    
+    print()
+    print("Chord scraper has finished. Please find output at" + out_dir)
 
 main()
