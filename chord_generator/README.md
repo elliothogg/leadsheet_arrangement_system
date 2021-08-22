@@ -1,21 +1,25 @@
 # chord_generator
 
 This contain the cDCGAN model used to generate chord voicings for a given chord label.
-It also contains a data analysis and data embedding script that was used to embed the Jazz-Chords dataset for the models
+It also contains two data analysis and data embedding scripts that was used to embed the Jazz-Chords dataset for the models
 
 For more information on all of this - see paper section 5
 
 ## Usage
 
+NOTE: When using your own data, the extract_chord_pairs script must be run before the chord_analysis_embedding
+
 The trained generator model is saved at ./cDCGAN/cgan_generator.h5
 This can be imported using Keras API
+
+You must also have graphviz installed globally for Keras model plots to work
 
 ### Retrain model
 
 To retrain the model:
 
-$ cd cDCGAN
-$ python3 cdcganmodel.py
+$ cd cDCGAN\
+$ python3 cdcganmodel.py\
 
 ### Using your own dataset
 

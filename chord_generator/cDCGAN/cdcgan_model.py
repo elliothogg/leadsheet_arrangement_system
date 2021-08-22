@@ -261,11 +261,11 @@ latent_dim = 100
 # create the discriminator
 d_model = define_discriminator()
 d_model.summary()
-tf.keras.utils.plot_model(d_model, "d_model.png", show_shapes=True, show_layer_names=True)
+#tf.keras.utils.plot_model(d_model, "d_model.png", show_shapes=True, show_layer_names=True)
 # create the generator
 g_model = define_generator(latent_dim)
 g_model.summary()
-tf.keras.utils.plot_model(g_model, "gen_model.png", show_shapes=True, show_layer_names=True)
+#tf.keras.utils.plot_model(g_model, "gen_model.png", show_shapes=True, show_layer_names=True)
 # create the gan
 gan_model = define_gan(g_model, d_model)
 # load chord voicings

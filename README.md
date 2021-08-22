@@ -29,12 +29,16 @@ Each component has its own README; please see each one for more information.
 
 Python version = 3.8.3
 
+You must have venv installed globally
+
+You must also have graphviz installed globally for Keras model plots to work
+
 ### To install dependencies:
 
-$ cd leadsheet_arrangement_system
-$ python3 -m venv venv/
-$ source venv/bin/activate
-$ pip install -r requirements.txt
+$ cd leadsheet_arrangement_system\
+$ python3 -m venv venv/\
+$ source venv/bin/activate\
+$ pip install -r requirements.txt\
 
 ### To exit the virtual environment:
 
