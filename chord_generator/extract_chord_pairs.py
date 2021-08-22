@@ -11,12 +11,13 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 from chord_scraper.utils_dict import chord_label_to_integer_notation, extensions_to_integer_notation, noteMidiDB
 
-# This script takes the Jazz-Chords dataset, performs data analysis, and exports training data for the cDCGAN model
-# The training data is 3 x 818 chord voicings - dominant, minor-seventh, and major-seventh
-# The traning data is a tuple, with the first array containing encoded chord types - 0 = dominant, 1 = minor-seventh, 2 = major-seventh
-# The second array has either 88 length chord voicing vectors, or 3 x 12 chord voicing matrices
-# See report section 5 for more details
+# This script takes the Jazz-Chords dataset and extracts chord label - chord voicing pairs
+# It outputs a csv with 2 rows - chord labels and chord voicings
+# Chord label examples are "dominant", "minor-seventh" ...
+# Chord voicings are 88-note vectors
+# See report section 5 for more information
 
+# data_analysis_embedding takes the pairs outputted here and performs further analysis and embedding
 
 def load_pickle(path):
     data = None
@@ -33,7 +34,7 @@ out_dir = "./training_data/"
 
 verbose = False
 
-
+# Converts chord symbols into note vectors. Currently unused method
 def create_chord_label_vectors():
     index = 0
     invalid_chord_types_index = []
@@ -72,6 +73,7 @@ def create_chord_label_vectors():
         del chords_in_c[index]
 
 
+# Converts note number lists to 88-note vectors. See report figure 5.5 page 33
 def convert_notes_to_88_key_vectors():
     global chords_in_c
     for chord in chords_in_c:
@@ -82,9 +84,9 @@ def convert_notes_to_88_key_vectors():
         del chord['note_numbers']
 
 
-
+# Write chord labels and chord voicing vectors to csv file for further analysis and embedding
 def write_label_note_vectors():
-    with open(out_dir + 'jazz_chords_label_note_vectors.csv', mode='w') as csv_file:
+    with open(out_dir + 'chord_pairs.csv', mode='w') as csv_file:
         fieldnames = ['label', 'notes']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
@@ -103,12 +105,12 @@ def main():
     convert_notes_to_88_key_vectors()
  
 
+    print("Writing chord pairs...")
     write_label_note_vectors()
-    print("Writing Training Data...")
 
 
 
  
-    print("Embedding Complete. Find Training Data in " + out_dir)
+    print("Chords pairs extracted. Find them in " + out_dir)
 
 main()

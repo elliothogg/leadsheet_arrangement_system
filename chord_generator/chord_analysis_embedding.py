@@ -7,40 +7,51 @@ import inspect
 import sys
 import pickle
 import random
-
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
-
 from chord_scraper.utils_dict import note_number_to_name, unwanted_chord_tones, noteMidiDB
 import copy
 
+
+# MUST RUN extract_chord_pairs SCRIPT BEFORE THIS, OR ENSURE chord_pairs.csv exists in ./training_data
+
+# This script contains all of the data analysis that was performed on the Jazz-Chords dataset. It also outputs the two training data sets that are referenced
+# in the paper - see section 5.2 for further information
+# It takes the Jazz-Chords dataset as chord label - chord voicing pairs: the labels are strings such as "dominant", "minor-seventh" ...
+#                                                                        the voicings are 88-note vecors
+
+# Set output directory for graphs
 out_dir = "data_visualisations/"
 
+# Set output directory for training data
 training_out_dir = "training_data/"
 
-df = pd.read_csv('training_data/label_note_vectors.csv')
 
+# Import chord pairs
+df = pd.read_csv('training_data/chord_pairs.csv')
+
+# Prints some intial dataset information
 def print_meta_information(df):
     print(df.head())
     print(df.dtypes)
     print(df.describe())
     print("number of null entries: ", df.isnull().sum())
-   
+
+# Prints count of each chord type
 def print_unfiltered_chord_distributions(df):
     value_count=df['label'].value_counts()
     print(value_count)
 
+# Plots counts of each chord type before filtering taken place
 def plot_chords_count_unfiltered(df):
-    plt.figure(figsize=(15, 8));
+    plt.figure(figsize=(18, 8));
     countplot = sns.countplot(y='label',data = df, orient="h");
     countplot.set_yticklabels(countplot.get_yticklabels(), fontsize=14)
     countplot.set_xticklabels([0,250,500,750,1000,1250,1500,1750,2000], fontsize=14)
     countplot.set_xlabel("", fontsize=16)
     countplot.set_ylabel("", fontsize=16)
-    # for bar in countplot.patches:
-    #     countplot.annotate('{:}'.format(bar.get_height()), (bar.get_x()+0.15, bar.get_height()+1), fontsize=15)
-    plt.show()
+    # plt.show()
     plt.savefig(out_dir + "chords_count_unfiltered.png")
 
 
@@ -66,6 +77,7 @@ filtered_labels = df_filtered['label'].unique()
 for label in filtered_labels:
     print(label)
 
+
 dominant_chords = df_filtered[(df_filtered.label=="dominant")]
 minor_seventh_chords = df_filtered[(df_filtered.label=="minor-seventh")]
 major_chords = df_filtered[(df_filtered.label=="major")]
@@ -90,12 +102,6 @@ def stack_plot_chords(dataframe):
     plt.ylabel('occurences')
     plt.show()
 
-
-
-# stack_plot_chords(dominant_chords)
-# stack_plot_chords(minor_seventh_chords)
-# stack_plot_chords(major_chords)
-# stack_plot_chords(major_seventh_chords)
 
 
 def plot_filtered_chords(filtered_df):
@@ -200,6 +206,8 @@ unwanted_note_count_major_seventh = count_total_unwanted_notes_in_chord_type(maj
 total_notes_major = count_total_notes_in_chord_type(major_chords_array)
 unwanted_note_count_major = count_total_unwanted_notes_in_chord_type(major_chords_array, "major")
 
+
+# Calculates ammount of inaccuracy in chord voicings
 def calculate_margin_of_error(chord_type, total_notes, total_unwanted_notes):
     accuracy = 0
     if (total_unwanted_notes == 0): accuracy = 1
@@ -289,7 +297,7 @@ def create_chord_vectors_training_data():
     with open(training_out_dir + 'chord_vectors_training_data.pickle', 'wb') as file:
         pickle.dump(training_data, file)
 
-
+# Creates scatter plot seen in paper figure 5.7 page 35
 def create_scatter_plot_chord_clusters():
     dominant_notes_type_count = [[], []]
     minor_seventh_notes_type_count = [[], []]
@@ -321,6 +329,8 @@ def create_scatter_plot_chord_clusters():
     plt.legend(["dominant", "minor-seventh", "major", "major-seventh"])
     plt.show()
 
+
+# Creates 7x12 training data chord matrices as defined in paper section 5.3.2
 def create_chord_matrices_training_data():
     labels = []
     voicings = []
@@ -343,14 +353,13 @@ def convert_chord_vector_to_matrix(vector):
     clipped_vector = np.array(copy.deepcopy(vector[3:87]))
     matrix = np.reshape(clipped_vector, (7, 12))
     return matrix
-    
 
 
+# All various data analysis/plotting/embedding functions are called here. Please uncomment as you wish
 
+# plot_chords_count_unfiltered(df)
 # create_chord_vectors_training_data()
-
 # create_chord_matrices_training_data()
-
-
-
 # create_scatter_plot_chord_clusters()
+
+
