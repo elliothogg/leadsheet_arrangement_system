@@ -19,7 +19,7 @@ You must also have graphviz installed globally for Keras model plots to work
 To retrain the model:
 
 $ cd cDCGAN\
-$ python3 cdcganmodel.py\
+$ python3 cdcganmodel.py
 
 ### Using your own dataset
 

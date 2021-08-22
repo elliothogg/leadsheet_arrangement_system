@@ -38,7 +38,7 @@ You must also have graphviz installed globally for Keras model plots to work
 $ cd leadsheet_arrangement_system\
 $ python3 -m venv venv/\
 $ source venv/bin/activate\
-$ pip install -r requirements.txt\
+$ pip install -r requirements.txt
 
 ### To exit the virtual environment:
 
