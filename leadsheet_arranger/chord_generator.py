@@ -42,11 +42,11 @@ chord_types_dict = {
 }
 
 # Load trained cDCGAN model (relative path is different depending on where functions are called)
+c_gan_model = None
 try:
     c_gan_model = load_model('../chord_generator/CDCGAN/cgan_generator.h5')
 except:
     pass
-# Load trained cDCGAN model
 try:
     c_gan_model = load_model('cgan_generator.h5')
 except:
