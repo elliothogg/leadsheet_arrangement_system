@@ -40,7 +40,7 @@ tf.keras.layers.Dense(64, activation='relu'),
 tf.keras.layers.Dense(3)
 ])
 
-# here we use 64 parallel feature maps and kernal size of 3.
+# here we use 64 parallel feature maps and kernal size of 2.
 model = tf.keras.Sequential([
 tf.keras.layers.Conv1D(filters=64, kernel_size=2, activation='relu', input_shape=(7, 12)),
 tf.keras.layers.MaxPooling1D(pool_size=1),
