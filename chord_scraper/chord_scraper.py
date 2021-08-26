@@ -15,7 +15,7 @@ chords = []
 chords_in_c = []
 chords_meta_data = {}
 index_of_inverted_chords = []
-deviation = 20 #allows notes either-side of the chord location to be included in the chord (notes next to each other in a chord are usually ofset on the x-axis)
+tolerance = 20 #allows notes either-side of the chord location to be included in the chord (notes next to each other in a chord are usually ofset on the x-axis)
 in_dir = "./fully_arranged_standards_musicxml" #in_dir of musicXML files
 out_dir = "./dataset/"
 
@@ -90,7 +90,7 @@ def get_chords_from_bar(bar):
         bar_chords.append(chord)
     return bar_chords
 
-# extracts chord voicings for each extracted chord symbol. Uses x-axis-deviation to do so - see report for more information - section 4.3
+# extracts chord voicings for each extracted chord symbol. Uses x-axis-tolerance to do so - see report for more information - section 4.3
 def get_chord_notes(file_name, current_songs_chords):
     note_found = False
     for chord in current_songs_chords:
@@ -100,7 +100,7 @@ def get_chord_notes(file_name, current_songs_chords):
                     measure = re.search(r"(?<=number=\")(.*?)(?=\")", line).group(1)
                 if ("<note default-x" in line) and (measure == chord['measure']):
                     note_x = re.search(r"(?<=default-x=\")(.*?)(?=\")", line).group(1)
-                    if note_within_deviation_limits(note_deviation_limits(deviation, chord['notes_x_location']), note_x):
+                    if note_within_tolerance_limits(note_tolerance_limits(tolerance, chord['notes_x_location']), note_x):
                         note_found = True
                 if ("<step>" in line) and (note_found):
                     note = re.search(r"(?<=<step>)(.*?)(?=<\/step>)", line).group(1)
@@ -127,17 +127,17 @@ def flatten_chords():
     global chords 
     chords = [item for sublist in chords for item in sublist]
 
-# Converts total x-axis deviation to upper and lower limits
-def note_deviation_limits(deviation, location):
+# Converts total x-axis tolerance to upper and lower limits
+def note_tolerance_limits(tolerance, location):
     location_int = float(location)
-    lower_limit = location_int - deviation
-    upper_limit = location_int + deviation
+    lower_limit = location_int - tolerance
+    upper_limit = location_int + tolerance
     return [lower_limit, upper_limit]
 
-# Checks if a note's x-axis location is within deviation limit
-def note_within_deviation_limits(deviation_limits, location):
+# Checks if a note's x-axis location is within tolerance limit
+def note_within_tolerance_limits(tolerance_limits, location):
     location_int = float(location)
-    if (location_int > deviation_limits[0]) and (location_int < deviation_limits[1]):
+    if (location_int > tolerance_limits[0]) and (location_int < tolerance_limits[1]):
         return True
     return False
 
@@ -167,7 +167,7 @@ def remove_invalid_chords():
     for index in invalid_chords:
         del chords[index]
         count += 1
-    if (verbose): print("Total number of chords with < 3 notes: ", count, ". Removing now.")
+    if (verbose): print("\nTotal number of chords with less than 3 notes: ", count, ". Removing now.")
 
 # Adds note number representations of chords
 def add_note_numbers():
@@ -290,7 +290,7 @@ def count_num_inverted_chords():
             count = count + 1
             index_of_inverted_chords.append(index)
         index = index + 1
-    if (verbose): print ("Number of inverted chords: ", count)
+    if (verbose): print ("\nNumber of inverted chords: ", count)
     return count
 
 # Writes Raw Chord data as pickle and CSV
@@ -354,12 +354,12 @@ def test_transpose_to_c():
             bottom_note_counts[chord['note_numbers'][0]] = 1
         index = index + 1
     if count != num_of_inverted_chords:
-        if (verbose): print ("Error - transpose function not working: expected num of inverted chords: ", num_of_inverted_chords, ". actual ", count)
-        if (verbose): print ("Chords with errors:")
+        if (verbose): print ("\nError - Transpose Function: Expected num of inverted chords: ", num_of_inverted_chords,". Actual:", count)
+        if (verbose): print ("\nChords with errors:")
         find_incorrectly_transposed_chords(index_of_inverted_transposed_chords)
         return False
     else:
-        print ("success - transpose working correctly")
+        print ("\nsuccess - transpose working correctly")
         return True
 
 # Utility function to locate any wrongly transposed chords. Does this by crossreferencing with inverted chords list
@@ -387,12 +387,13 @@ def transpose_extreme_octaves():
         if note[len(note)-1] > 88:
             out_of_range_chords.append(index)
         index = index + 1
-    if (verbose): print(len(out_of_range_chords), "chords have outlying voicings. Removing from array:")
+    if (verbose and len(out_of_range_chords)):
+        print()
+        print(len(out_of_range_chords), "chords have outlying voicings. Removing from array:")
     out_of_range_chords.sort(reverse=True) # reverse the order of the invalid chords indices as need to remove from list in reverse order
     for index in out_of_range_chords:
         del chords_in_c[index]
-        if (verbose): print("chord at index ", index, "deleted")
-    if (verbose): print(len(chords_in_c))
+        if (verbose and len(out_of_range_chords)): print("chord at index ", index, "deleted")
 
 # test function which is used to break recursion of transpose_extreme_octaves function
 def test_transpose_extreme_octaves(is_user_test=True):
@@ -426,6 +427,8 @@ def gather_chord_type_meta_data():
         if chord['type'] in chords_meta_data:
             chords_meta_data[chord['type']] = chords_meta_data[chord['type']] + 1
         else: chords_meta_data[chord['type']] = 1
+    print()
+    print("Chord Type Distribution:")
     print(chords_meta_data)
 
 def main():
@@ -465,18 +468,22 @@ def main():
     if (meta):
         count_num_inverted_chords()
 
-    # write_raw_chords_data()
+    write_raw_chords_data()
     transpose_chords_to_key_c()
     test_transpose_to_c()
     transpose_extreme_octaves()
     test_transpose_extreme_octaves()
-    # write_chords_in_c_data()
-
+    write_chords_in_c_data()
 
     if (meta):
+        print()
+        print("Meta-Information:")
+        print()
+        print("Total number of raw chords extracted:", len(chords))
+        print("Total number of cleaned and transposed chords extracted:",len(chords_in_c))
         gather_chord_type_meta_data()
-    
+
     print()
-    print("Chord scraper has finished. Please find output at" + out_dir)
+    print("Chord Scraper has finished. Please find output at " + out_dir)
 
 main()

@@ -193,7 +193,7 @@ def set_verbose(bool):
 # Main method. Contains a CLI, as well as calls to other subsystems.
 def main():
     #CLI 
-    parser = argparse.ArgumentParser(description="Leadsheet Arranger")
+    parser = argparse.ArgumentParser(description="Leadsheet Arrangement System (LSAS)")
     parser.add_argument('input_directory', nargs='?', type=str, help=("path to input directory. Default is " + in_dir))
     parser.add_argument('output_directory', nargs='?', type=str, help=("path to output directory. Default is " + out_dir))
     parser.add_argument('-v', '--verbose', action='store_const', const='verbose', help="log parsing actions and errors.")
