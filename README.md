@@ -2,9 +2,10 @@
 
 This project is a masters dissertation that uses deep learning to generate full arrangements of jazz piano leadsheets.
 
-The project is supervised by:
-David Herbert
-&
+The project is supervised by:  
+
+David Herbert  
+
 Mark Turner
 
 
