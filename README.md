@@ -22,7 +22,7 @@ The LSAS is made up of 3 main components:
 
 ## Paper
 
-[Please read for more information](https://nucode.ncl.ac.uk/c0081775/leadsheet-chord-generation/-/blob/master/Leadsheet%20Arrangement%20Using%20Deep%20Learning.pdf)
+[Please read for more information](https://github.com/elliothogg/leadsheet_arrangement_system/blob/master/paper/Leadsheet%20Arrangement%20Using%20Deep%20Learning.pdf)
 
 
 ## Usage 
